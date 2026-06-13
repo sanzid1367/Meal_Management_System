@@ -186,46 +186,46 @@ export default function App() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Top Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-br from-white/60 to-white/30 backdrop-blur-md border-white/40 shadow-sm border rounded-2xl">
+        <Card className="bg-gradient-to-br from-card/60 to-card/30 backdrop-blur-md border-border border rounded-2xl">
           <CardContent className="p-6">
             <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-teal-100 text-teal-600 rounded-xl">
+              <div className="p-3 bg-primary/15 text-primary rounded-xl">
                 <Receipt size={24} />
               </div>
             </div>
-            <p className="text-slate-500 text-sm font-medium mb-1">Total Expense</p>
-            <h2 className="text-3xl font-bold text-slate-800">৳{summary?.totals.total_expense.toLocaleString() || 0}</h2>
+            <p className="text-muted-foreground text-sm font-medium mb-1">Total Expense</p>
+            <h2 className="text-3xl font-bold text-foreground">৳{summary?.totals.total_expense.toLocaleString() || 0}</h2>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-white/60 to-white/30 backdrop-blur-md border-white/40 shadow-sm border rounded-2xl">
+        <Card className="bg-gradient-to-br from-card/60 to-card/30 backdrop-blur-md border-border border rounded-2xl">
           <CardContent className="p-6">
             <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-indigo-100 text-indigo-600 rounded-xl">
+              <div className="p-3 bg-chart-2/15 text-chart-2 rounded-xl">
                 <Utensils size={24} />
               </div>
             </div>
-            <p className="text-slate-500 text-sm font-medium mb-1">Current Meal Rate</p>
-            <h2 className="text-3xl font-bold text-slate-800">৳{summary?.totals.meal_rate.toFixed(2) || 0}</h2>
+            <p className="text-muted-foreground text-sm font-medium mb-1">Current Meal Rate</p>
+            <h2 className="text-3xl font-bold text-foreground">৳{summary?.totals.meal_rate.toFixed(2) || 0}</h2>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-white/60 to-white/30 backdrop-blur-md border-white/40 shadow-sm border rounded-2xl">
+        <Card className="bg-gradient-to-br from-card/60 to-card/30 backdrop-blur-md border-border border rounded-2xl">
           <CardContent className="p-6">
             <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-amber-100 text-amber-600 rounded-xl">
+              <div className="p-3 bg-chart-3/15 text-chart-3 rounded-xl">
                 <Wallet size={24} />
               </div>
             </div>
-            <p className="text-slate-500 text-sm font-medium mb-1">Cash in Hand</p>
-            <h2 className="text-3xl font-bold text-slate-800">৳{summary?.totals.cash_in_hand.toLocaleString() || 0}</h2>
+            <p className="text-muted-foreground text-sm font-medium mb-1">Cash in Hand</p>
+            <h2 className="text-3xl font-bold text-foreground">৳{summary?.totals.cash_in_hand.toLocaleString() || 0}</h2>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-teal-500 to-teal-700 border-none shadow-xl shadow-teal-500/20 text-white flex flex-col justify-between rounded-2xl">
+        <Card className="bg-gradient-to-br from-primary to-primary/80 border-none text-white flex flex-col justify-between rounded-2xl">
           <CardContent className="p-6 h-full flex flex-col justify-between">
             <div>
-              <p className="text-teal-100 text-sm font-medium mb-1">Total Meals Served</p>
+              <p className="text-white/80 text-sm font-medium mb-1">Total Meals Served</p>
               <h2 className="text-4xl font-bold">{summary?.totals.total_meals.toFixed(1) || 0}</h2>
             </div>
             <div className="mt-4">
@@ -239,51 +239,51 @@ export default function App() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Chart area */}
-        <Card className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm p-6 lg:col-span-2 flex flex-col">
+        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-2xl p-6 lg:col-span-2 flex flex-col">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-slate-800">Expense Trend ({format(new Date(expenses[0]?.date || today), 'MMM')})</h3>
-            <button onClick={() => setActiveTab('expenses')} className="text-teal-600 text-sm font-medium hover:underline cursor-pointer">View Ledger</button>
+            <h3 className="text-lg font-bold text-foreground">Expense Trend ({format(new Date(expenses[0]?.date || today), 'MMM')})</h3>
+            <button onClick={() => setActiveTab('expenses')} className="text-primary text-sm font-medium hover:underline cursor-pointer">View Ledger</button>
           </div>
           <div className="flex-1 min-h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={expenseChartData.length ? expenseChartData : [{ day: '1', cost: 0 }]}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dx={-10} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} dx={-10} />
                 <RechartsTooltip
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 />
-                <Line type="monotone" dataKey="cost" stroke="#0d9488" strokeWidth={4} dot={{ r: 6, fill: '#0d9488', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 8 }} />
+                <Line type="monotone" dataKey="cost" stroke="var(--primary)" strokeWidth={4} dot={{ r: 6, fill: 'var(--primary)', strokeWidth: 2, stroke: 'var(--card)' }} activeDot={{ r: 8 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
         {/* Member Balances Mini-List */}
-        <Card className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm p-6 flex flex-col">
+        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-2xl p-6 flex flex-col">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-slate-800">Member Balances</h3>
-            <button onClick={() => setActiveTab('members')} className="text-teal-600 text-sm font-medium hover:underline cursor-pointer">View All</button>
+            <h3 className="text-lg font-bold text-foreground">Member Balances</h3>
+            <button onClick={() => setActiveTab('members')} className="text-primary text-sm font-medium hover:underline cursor-pointer">View All</button>
           </div>
           <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
             {(summary?.member_summaries || []).filter(m => m.is_active).sort((a, b) => a.balance - b.balance).map((member, i) => (
-              <div key={member.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50/50 transition-colors border border-transparent hover:border-slate-100">
+              <div key={member.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-secondary/50 transition-colors border border-transparent hover:border-border/50">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm
-                    ${i === 0 ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'}
+                    ${i === 0 ? 'bg-destructive/15 text-destructive' : 'bg-secondary text-foreground/80'}
                   `}>
                     {member.name.substring(0, 2).toUpperCase()}
                   </div>
                   <div>
-                    <p className="font-semibold text-slate-800">{member.name}</p>
-                    <p className="text-xs text-slate-500">{member.total_meals} meals</p>
+                    <p className="font-semibold text-foreground">{member.name}</p>
+                    <p className="text-xs text-muted-foreground">{member.total_meals} meals</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`font-bold ${member.balance >= 0 ? 'text-teal-600' : 'text-red-500'}`}>
+                  <p className={`font-bold ${member.balance >= 0 ? 'text-primary' : 'text-destructive'}`}>
                     {member.balance >= 0 ? '+' : ''}৳{member.balance.toFixed(0)}
                   </p>
-                  <p className="text-xs text-slate-400">Balance</p>
+                  <p className="text-xs text-muted-foreground/80">Balance</p>
                 </div>
               </div>
             ))}
@@ -297,18 +297,18 @@ export default function App() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Mess Members</h2>
-          <p className="text-slate-500 text-sm">Manage member details and view individual summaries.</p>
+          <h2 className="text-2xl font-bold text-foreground">Mess Members</h2>
+          <p className="text-muted-foreground text-sm">Manage member details and view individual summaries.</p>
         </div>
-        {isAdmin && <Button onClick={() => setMemberModalOpen(true)} className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-lg shadow-teal-600/30">
+        {isAdmin && <Button onClick={() => setMemberModalOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">
           <Plus size={18} className="mr-2" /> Add Member
         </Button>}
       </div>
 
-      <div className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm overflow-x-auto">
+      <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-slate-200 text-slate-500 text-sm">
+            <tr className="border-b border-border text-muted-foreground text-sm">
               <th className="p-4 font-medium">Name</th>
               <th className="p-4 font-medium">Status</th>
               <th className="p-4 font-medium">Deposits</th>
@@ -320,19 +320,19 @@ export default function App() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {(summary?.member_summaries || []).map(member => (
-              <tr key={member.id} className="hover:bg-slate-50/50 transition-colors">
+              <tr key={member.id} className="hover:bg-secondary/50 transition-colors">
                 <td className="p-4">
-                  <div className="font-semibold text-slate-800">{member.name}</div>
-                  {isAdmin && member.phone && <div className="text-xs text-slate-500">{member.phone}</div>}
+                  <div className="font-semibold text-foreground">{member.name}</div>
+                  {isAdmin && member.phone && <div className="text-xs text-muted-foreground">{member.phone}</div>}
                 </td>
                 <td className="p-4">
-                  {member.is_active ? <Badge className="bg-teal-100 text-teal-700 hover:bg-teal-200" variant="secondary">Active</Badge> : <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200" variant="secondary">Inactive</Badge>}
+                  {member.is_active ? <Badge className="bg-primary/15 text-primary hover:bg-primary/25" variant="secondary">Active</Badge> : <Badge className="bg-secondary text-foreground/90 hover:bg-secondary/80" variant="secondary">Inactive</Badge>}
                 </td>
-                <td className="p-4 font-medium text-slate-700">৳{member.total_deposit}</td>
-                <td className="p-4 text-slate-600">{member.total_meals}</td>
-                <td className="p-4 text-slate-600">৳{member.meal_cost.toFixed(2)}</td>
+                <td className="p-4 font-medium text-foreground/90">৳{member.total_deposit}</td>
+                <td className="p-4 text-foreground/80">{member.total_meals}</td>
+                <td className="p-4 text-foreground/80">৳{member.meal_cost.toFixed(2)}</td>
                 <td className="p-4">
-                  <span className={`font-bold px-2 py-1 rounded-md ${member.balance >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                  <span className={`font-bold px-2 py-1 rounded-md ${member.balance >= 0 ? 'bg-chart-4/10 text-chart-4' : 'bg-destructive/10 text-red-700'}`}>
                     {member.balance >= 0 ? '+' : ''}৳{member.balance.toFixed(2)}
                   </span>
                 </td>
@@ -348,7 +348,7 @@ export default function App() {
                         await api.updateMember(member.id, { is_active: member.is_active ? 0 : 1 });
                         loadAll();
                       }} 
-                      className={`text-xs rounded-lg transition-colors cursor-pointer ${member.is_active ? 'text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200' : 'text-teal-600 hover:bg-teal-50 hover:text-teal-700 border-teal-200'}`}
+                      className={`text-xs rounded-lg transition-colors cursor-pointer ${member.is_active ? 'text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20' : 'text-primary hover:bg-primary/10 hover:text-primary/90 border-primary/20'}`}
                     >
                       {member.is_active ? 'Drop Member' : 'Restore Member'}
                     </Button>
@@ -369,37 +369,37 @@ export default function App() {
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col flex-1 min-h-0">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
           <div>
-            <h2 className="text-2xl font-bold text-slate-800">Daily Meal Entry</h2>
-            <p className="text-slate-500 text-sm">Record lunch and dinner counts.</p>
+            <h2 className="text-2xl font-bold text-foreground">Daily Meal Entry</h2>
+            <p className="text-muted-foreground text-sm">Record lunch and dinner counts.</p>
           </div>
           <div className="flex gap-2 items-center">
-            <Input type="date" value={mealDate} onChange={e => setMealDate(e.target.value)} className="w-auto bg-white/60" />
-            {isAdmin && <Button disabled={isSavingMeals} onClick={saveMealGrid} className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-lg shadow-teal-600/30 transition-all disabled:opacity-70">
+            <Input type="date" value={mealDate} onChange={e => setMealDate(e.target.value)} className="w-auto bg-card/60" />
+            {isAdmin && <Button disabled={isSavingMeals} onClick={saveMealGrid} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition-all disabled:opacity-70">
               {isSavingMeals ? <><Loader2 className="animate-spin mr-2" size={16} /> Saving...</> : 'Save'}
             </Button>}
           </div>
         </div>
 
-        <div className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm flex-1 overflow-hidden flex flex-col">
+        <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl flex-1 overflow-hidden flex flex-col">
           <div className="overflow-auto custom-scrollbar flex-1">
             <table className="w-full text-center border-collapse min-w-[800px]">
-              <thead className="sticky top-0 bg-white/90 backdrop-blur-md z-10 shadow-sm">
+              <thead className="sticky top-0 bg-card/90 backdrop-blur-md z-10">
                 <tr>
-                  <th className="p-3 border-b border-r border-slate-200 text-left sticky left-0 bg-white/90 backdrop-blur-md z-20 w-32">
-                    <span className="text-sm font-medium text-slate-500">Date</span>
+                  <th className="p-3 border-b border-r border-border text-left sticky left-0 bg-card/90 backdrop-blur-md z-20 w-32">
+                    <span className="text-sm font-medium text-muted-foreground">Date</span>
                   </th>
                   {activeMembers.map(member => (
-                    <th key={member.id} colSpan={2} className="p-2 border-b border-r border-slate-200 min-w-[140px]">
-                      <div className="text-sm font-bold text-slate-700 truncate max-w-[140px]" title={member.name}>{member.name}</div>
+                    <th key={member.id} colSpan={2} className="p-2 border-b border-r border-border min-w-[140px]">
+                      <div className="text-sm font-bold text-foreground/90 truncate max-w-[140px]" title={member.name}>{member.name}</div>
                     </th>
                   ))}
                 </tr>
                 <tr>
-                  <th className="p-2 border-b border-r border-slate-200 sticky left-0 bg-white/90 backdrop-blur-md z-20"></th>
+                  <th className="p-2 border-b border-r border-border sticky left-0 bg-card/90 backdrop-blur-md z-20"></th>
                   {activeMembers.map(member => (
                     <React.Fragment key={`${member.id}-sub`}>
-                      <th className="p-1 border-b border-r border-slate-100 text-[10px] font-medium text-slate-500 bg-slate-50/50 min-w-[70px]">L</th>
-                      <th className="p-1 border-b border-r border-slate-200 text-[10px] font-medium text-slate-500 bg-slate-50/50 min-w-[70px]">D</th>
+                      <th className="p-1 border-b border-r border-border/50 text-[10px] font-medium text-muted-foreground bg-secondary/50 min-w-[70px]">L</th>
+                      <th className="p-1 border-b border-r border-border text-[10px] font-medium text-muted-foreground bg-secondary/50 min-w-[70px]">D</th>
                     </React.Fragment>
                   ))}
                 </tr>
@@ -409,28 +409,28 @@ export default function App() {
                   const dayNum = parseInt(date.split('-')[2]);
                   const isSelected = date === mealDate;
                   return (
-                    <tr key={date} className={`hover:bg-slate-50/30 ${isSelected ? 'bg-teal-50/20' : ''}`}>
-                      <td className={`p-3 border-b border-r border-slate-200 text-left sticky left-0 bg-white/90 font-medium z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] ${isSelected ? 'text-teal-700' : 'text-slate-700'}`}>
-                        {dayNum} <span className="text-xs text-slate-400 font-normal uppercase">{format(new Date(date), "MMM")}</span>
+                    <tr key={date} className={`hover:bg-secondary/30 ${isSelected ? 'bg-primary/10' : ''}`}>
+                      <td className={`p-3 border-b border-r border-border text-left sticky left-0 bg-card/90 font-medium z-10 ${isSelected ? 'text-primary/90' : 'text-foreground/90'}`}>
+                        {dayNum} <span className="text-xs text-muted-foreground/80 font-normal uppercase">{format(new Date(date), "MMM")}</span>
                       </td>
                       {activeMembers.map(member => {
                         const renderInput = (type: 'lunch' | 'dinner', val: number) => {
                           if (!isSelected || !isAdmin) {
                             return (
-                              <td className={`p-2 border-b border-r border-slate-100 ${val > 0 ? 'bg-slate-100/50 text-slate-700 font-medium' : 'text-slate-400'} text-base`}>
+                              <td className={`p-2 border-b border-r border-border/50 ${val > 0 ? 'bg-secondary/50 text-foreground/90 font-medium' : 'text-muted-foreground/80'} text-base`}>
                                 {val > 0 ? val : '-'}
                               </td>
                             );
                           }
                           return (
-                            <td className={`p-2 border-b border-r border-slate-100 ${val > 0 ? 'bg-teal-50/50' : ''}`}>
+                            <td className={`p-2 border-b border-r border-border/50 ${val > 0 ? 'bg-primary/20' : ''}`}>
                               <input
                                 type="number"
                                 step="0.5"
                                 min="0"
                                 value={val === 0 ? '' : val}
                                 onChange={(e) => setMealValue(date, member.id, type, 'count', Number(e.target.value))}
-                                className="w-full min-w-[60px] h-8 text-center bg-transparent text-base focus:outline-none focus:bg-white focus:ring-2 focus:ring-teal-500 rounded px-1 py-1 text-slate-800 font-medium placeholder-slate-300"
+                                className="w-full min-w-[60px] h-8 text-center bg-transparent text-base focus:outline-none focus:bg-card focus:ring-2 focus:ring-primary rounded px-1 py-1 text-foreground font-medium placeholder-muted-foreground/50"
                                 placeholder="-"
                               />
                             </td>
@@ -459,18 +459,18 @@ export default function App() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Expenses & Bazar</h2>
-          <p className="text-slate-500 text-sm">Track daily shopping costs.</p>
+          <h2 className="text-2xl font-bold text-foreground">Expenses & Bazar</h2>
+          <p className="text-muted-foreground text-sm">Track daily shopping costs.</p>
         </div>
-        {isAdmin && <Button onClick={() => setExpenseModalOpen(true)} className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-lg shadow-teal-600/30">
+        {isAdmin && <Button onClick={() => setExpenseModalOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">
           <Plus size={18} className="mr-2" /> Add Expense
         </Button>}
       </div>
 
-      <div className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-slate-200 text-slate-500 text-sm bg-slate-50/50">
+            <tr className="border-b border-border text-muted-foreground text-sm bg-secondary/50">
               <th className="p-4 font-medium">Date</th>
               <th className="p-4 font-medium">Description</th>
               <th className="p-4 font-medium">Shopper</th>
@@ -479,18 +479,18 @@ export default function App() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(exp => (
-              <tr key={exp.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="p-4 text-slate-600 whitespace-nowrap">{exp.date}</td>
-                <td className="p-4 text-slate-800">{exp.description}</td>
-                <td className="p-4 text-slate-600">
+              <tr key={exp.id} className="hover:bg-secondary/50 transition-colors">
+                <td className="p-4 text-foreground/80 whitespace-nowrap">{exp.date}</td>
+                <td className="p-4 text-foreground">{exp.description}</td>
+                <td className="p-4 text-foreground/80">
                   <span className="inline-flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-slate-200 text-[10px] flex items-center justify-center font-bold text-slate-600">
+                    <span className="w-6 h-6 rounded-full bg-secondary text-[10px] flex items-center justify-center font-bold text-foreground/80">
                       {(exp.shopper_name || '?').substring(0, 2).toUpperCase()}
                     </span>
                     {exp.shopper_name || '-'}
                   </span>
                 </td>
-                <td className="p-4 font-bold text-slate-800 text-right">৳{exp.amount.toLocaleString()}</td>
+                <td className="p-4 font-bold text-foreground text-right">৳{exp.amount.toLocaleString()}</td>
               </tr>
             ))}
           </tbody>
@@ -503,18 +503,18 @@ export default function App() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Member Deposits</h2>
-          <p className="text-slate-500 text-sm">Money collected for the month.</p>
+          <h2 className="text-2xl font-bold text-foreground">Member Deposits</h2>
+          <p className="text-muted-foreground text-sm">Money collected for the month.</p>
         </div>
-        {isAdmin && <Button onClick={() => setDepositModalOpen(true)} className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-lg shadow-teal-600/30">
+        {isAdmin && <Button onClick={() => setDepositModalOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">
           <Plus size={18} className="mr-2" /> Add Deposit
         </Button>}
       </div>
 
-      <div className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-slate-200 text-slate-500 text-sm bg-slate-50/50">
+            <tr className="border-b border-border text-muted-foreground text-sm bg-secondary/50">
               <th className="p-4 font-medium">Date</th>
               <th className="p-4 font-medium">Member</th>
               <th className="p-4 font-medium text-right">Amount</th>
@@ -524,12 +524,12 @@ export default function App() {
           <tbody className="divide-y divide-slate-100">
             {deposits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(dep => {
               return (
-                <tr key={dep.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="p-4 text-slate-600 whitespace-nowrap">{dep.date}</td>
-                  <td className="p-4 font-medium text-slate-800">{dep.member_name || 'Unknown'}</td>
-                  <td className="p-4 font-bold text-teal-700 text-right">৳{dep.amount.toLocaleString()}</td>
+                <tr key={dep.id} className="hover:bg-secondary/50 transition-colors">
+                  <td className="p-4 text-foreground/80 whitespace-nowrap">{dep.date}</td>
+                  <td className="p-4 font-medium text-foreground">{dep.member_name || 'Unknown'}</td>
+                  <td className="p-4 font-bold text-primary/90 text-right">৳{dep.amount.toLocaleString()}</td>
                   <td className="p-4 text-center">
-                    <Badge className="bg-green-100 text-green-700 hover:bg-green-200" variant="secondary">Received</Badge>
+                    <Badge className="bg-chart-4/15 text-chart-4 hover:bg-green-200" variant="secondary">Received</Badge>
                   </td>
                 </tr>
               )
@@ -544,8 +544,8 @@ export default function App() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col h-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Monthly Report</h2>
-          <p className="text-slate-500 text-sm">Comprehensive summary of all expenses, deposits, and balances.</p>
+          <h2 className="text-2xl font-bold text-foreground">Monthly Report</h2>
+          <p className="text-muted-foreground text-sm">Comprehensive summary of all expenses, deposits, and balances.</p>
         </div>
         <Button onClick={async () => {
           try {
@@ -564,35 +564,35 @@ export default function App() {
             console.error("Export failed", err);
             alert("Failed to export CSV");
           }
-        }} className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-lg shadow-teal-600/30">
+        }} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">
           <FileText size={18} className="mr-2" /> Export CSV
         </Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 shrink-0">
-        <Card className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm p-4">
-          <p className="text-slate-500 text-xs font-medium mb-1">Total Expenses</p>
-          <h3 className="text-xl font-bold text-slate-800">৳{summary?.totals?.total_expense?.toLocaleString() || 0}</h3>
+        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-2xl p-4">
+          <p className="text-muted-foreground text-xs font-medium mb-1">Total Expenses</p>
+          <h3 className="text-xl font-bold text-foreground">৳{summary?.totals?.total_expense?.toLocaleString() || 0}</h3>
         </Card>
-        <Card className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm p-4">
-          <p className="text-slate-500 text-xs font-medium mb-1">Total Deposits</p>
-          <h3 className="text-xl font-bold text-slate-800">৳{summary?.totals?.total_deposit?.toLocaleString() || 0}</h3>
+        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-2xl p-4">
+          <p className="text-muted-foreground text-xs font-medium mb-1">Total Deposits</p>
+          <h3 className="text-xl font-bold text-foreground">৳{summary?.totals?.total_deposit?.toLocaleString() || 0}</h3>
         </Card>
-        <Card className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm p-4">
-          <p className="text-slate-500 text-xs font-medium mb-1">Total Meals</p>
-          <h3 className="text-xl font-bold text-slate-800">{summary?.totals?.total_meals?.toFixed(1) || 0}</h3>
+        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-2xl p-4">
+          <p className="text-muted-foreground text-xs font-medium mb-1">Total Meals</p>
+          <h3 className="text-xl font-bold text-foreground">{summary?.totals?.total_meals?.toFixed(1) || 0}</h3>
         </Card>
-        <Card className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm p-4">
-          <p className="text-slate-500 text-xs font-medium mb-1">Meal Rate</p>
-          <h3 className="text-xl font-bold text-teal-700">৳{summary?.totals?.meal_rate?.toFixed(2) || 0}</h3>
+        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-2xl p-4">
+          <p className="text-muted-foreground text-xs font-medium mb-1">Meal Rate</p>
+          <h3 className="text-xl font-bold text-primary/90">৳{summary?.totals?.meal_rate?.toFixed(2) || 0}</h3>
         </Card>
       </div>
 
-      <div className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm flex-1 overflow-hidden flex flex-col min-h-0">
+      <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl flex-1 overflow-hidden flex flex-col min-h-0">
         <div className="overflow-auto custom-scrollbar flex-1">
           <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead className="sticky top-0 bg-white/90 backdrop-blur-md z-10 shadow-sm">
-              <tr className="border-b border-slate-200 text-slate-500 text-sm">
+            <thead className="sticky top-0 bg-card/90 backdrop-blur-md z-10">
+              <tr className="border-b border-border text-muted-foreground text-sm">
                 <th className="p-4 font-medium">Member Name</th>
                 <th className="p-4 font-medium text-right">Opening Bal.</th>
                 <th className="p-4 font-medium text-right">Deposits</th>
@@ -603,17 +603,17 @@ export default function App() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {(summary?.member_summaries || []).filter(m => m.is_active || m.balance !== 0).map(member => (
-                <tr key={member.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="p-4 font-semibold text-slate-800">
+                <tr key={member.id} className="hover:bg-secondary/50 transition-colors">
+                  <td className="p-4 font-semibold text-foreground">
                     {member.name}
-                    {!member.is_active && <Badge className="ml-2 bg-slate-100 text-slate-500 text-[10px]" variant="secondary">Inactive</Badge>}
+                    {!member.is_active && <Badge className="ml-2 bg-secondary text-muted-foreground text-[10px]" variant="secondary">Inactive</Badge>}
                   </td>
-                  <td className="p-4 text-slate-600 text-right">৳{member.opening_balance?.toFixed(2) || 0}</td>
-                  <td className="p-4 text-teal-700 font-medium text-right">৳{member.total_deposit?.toLocaleString() || 0}</td>
-                  <td className="p-4 text-slate-600 text-center">{member.total_meals || 0}</td>
-                  <td className="p-4 text-slate-600 text-right">৳{member.meal_cost?.toFixed(2) || 0}</td>
+                  <td className="p-4 text-foreground/80 text-right">৳{member.opening_balance?.toFixed(2) || 0}</td>
+                  <td className="p-4 text-primary/90 font-medium text-right">৳{member.total_deposit?.toLocaleString() || 0}</td>
+                  <td className="p-4 text-foreground/80 text-center">{member.total_meals || 0}</td>
+                  <td className="p-4 text-foreground/80 text-right">৳{member.meal_cost?.toFixed(2) || 0}</td>
                   <td className="p-4 text-right">
-                    <span className={`font-bold px-2 py-1 rounded-md ${member.balance >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                    <span className={`font-bold px-2 py-1 rounded-md ${member.balance >= 0 ? 'bg-chart-4/10 text-chart-4' : 'bg-destructive/10 text-red-700'}`}>
                       {member.balance >= 0 ? '+' : ''}৳{member.balance?.toFixed(2) || 0}
                     </span>
                   </td>
@@ -632,7 +632,7 @@ export default function App() {
       <button
         onClick={() => setActiveTab(id)}
         className={`transition-all duration-300 ease-in-out font-medium rounded-xl flex items-center gap-3 px-4 py-3 w-full cursor-pointer
-          ${active ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30' : 'text-slate-500 hover:bg-white/50 hover:text-teal-700'}`}
+          ${active ? 'bg-primary text-primary-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`}
       >
         <Icon size={20} /> {label}
       </button>
@@ -640,19 +640,19 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#e2f1f0] text-slate-800 font-sans flex overflow-hidden selection:bg-teal-200 relative w-full">
+    <div className="min-h-screen bg-background text-foreground font-sans flex overflow-hidden selection:bg-teal-200 relative w-full">
       <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-teal-200/50 blur-[100px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-200/40 blur-[120px]"></div>
-        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-purple-200/30 blur-[90px]"></div>
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[100px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-chart-2/5 blur-[120px]"></div>
+        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-chart-3/5 blur-[90px]"></div>
       </div>
 
-      <aside className="w-64 bg-white/40 backdrop-blur-2xl border-r border-white/50 flex-col shadow-[4px_0_24px_rgba(0,0,0,0.02)] hidden md:flex z-20">
+      <aside className="w-64 bg-sidebar/40 backdrop-blur-2xl border-r border-sidebar-border/50 flex-col hidden md:flex z-20">
         <div className="p-6 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-teal-600/30">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl">
             M
           </div>
-          <span className="text-xl font-extrabold tracking-tight text-slate-800">Mess<span className="text-teal-600">Sync</span></span>
+          <span className="text-xl font-extrabold tracking-tight text-foreground">Mess<span className="text-primary">Sync</span></span>
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
@@ -663,16 +663,16 @@ export default function App() {
           <SidebarItem id="deposits" icon={Wallet} label="Deposits" />
 
           <div className="pt-6 pb-2">
-            <p className="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">System</p>
+            <p className="px-4 text-xs font-semibold text-muted-foreground/80 uppercase tracking-wider">System</p>
           </div>
           <SidebarItem id="reports" icon={FileText} label="Reports" />
         </nav>
 
         <div className="p-4">
           {isAdmin && (
-            <div className="bg-gradient-to-br from-teal-600 to-teal-800 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
+            <div className="bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-5 text-white relative overflow-hidden">
               <div className="absolute -right-4 -top-4 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
-              <p className="text-xs text-teal-200 font-medium mb-1">Month End</p>
+              <p className="text-xs text-white/80 font-medium mb-1">Month End</p>
               <h4 className="font-bold text-sm mb-3">Close {monthLabel} &<br />Generate PDF</h4>
               <Button disabled={isClosingMonth} onClick={async () => {
                 if (confirm('Are you sure you want to close this month?')) {
@@ -687,7 +687,7 @@ export default function App() {
                     setIsClosingMonth(false);
                   }
                 }
-              }} className="bg-white text-teal-800 text-xs font-bold w-full hover:bg-teal-50 transition-colors disabled:opacity-50">
+              }} className="bg-primary-foreground text-primary text-xs font-bold w-full hover:bg-primary/10 transition-colors disabled:opacity-50">
                 {isClosingMonth ? <><Loader2 className="animate-spin mr-2" size={14} /> Closing...</> : 'Close Month'}
               </Button>
             </div>
@@ -696,10 +696,10 @@ export default function App() {
       </aside>
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden z-10">
-        <header className="h-20 bg-white/20 backdrop-blur-md border-b border-white/30 px-8 flex items-center justify-between sticky top-0 shrink-0">
+        <header className="h-20 bg-card/20 backdrop-blur-md border-b border-border/30 px-8 flex items-center justify-between sticky top-0 shrink-0">
           <div>
-            <h1 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
-              <span className="text-slate-500 font-normal">Welcome{user ? ' back,' : ','}</span> {user ? 'Manager' : 'Viewer'} <span className="text-xl">👋</span>
+            <h1 className="text-xl font-semibold text-foreground flex items-center gap-2">
+              <span className="text-muted-foreground font-normal">Welcome{user ? ' back,' : ','}</span> {user ? 'Manager' : 'Viewer'} <span className="text-xl">👋</span>
             </h1>
           </div>
           <div className="flex items-center gap-4">
@@ -708,12 +708,12 @@ export default function App() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShareModalOpen(true)}
-                className="rounded-xl border-teal-200 text-teal-700 bg-teal-50/50 hover:bg-teal-100/50 hover:text-teal-800 flex items-center gap-1.5 transition-all cursor-pointer"
+                className="rounded-xl border-primary/20 text-primary/90 bg-primary/20 hover:bg-primary/20 hover:text-primary-foreground flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 <Share2 size={16} /> Share System
               </Button>
-              <span className="text-sm font-medium text-slate-600 bg-white/50 px-3 py-1 rounded-full">{user ? `${user.username} (${user.role})` : 'Viewer Mode'}</span>
-              {user && <Button variant="outline" size="sm" onClick={() => { localStorage.removeItem("access_token"); localStorage.removeItem("user"); window.location.reload(); }} className="rounded-xl border-slate-200 text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-colors cursor-pointer">Logout</Button>}
+              <span className="text-sm font-medium text-foreground/80 bg-card/50 px-3 py-1 rounded-full">{user ? `${user.username} (${user.role})` : 'Viewer Mode'}</span>
+              {user && <Button variant="outline" size="sm" onClick={() => { localStorage.removeItem("access_token"); localStorage.removeItem("user"); window.location.reload(); }} className="rounded-xl border-border text-foreground/80 hover:bg-destructive/10 hover:text-red-600 hover:border-red-100 transition-colors cursor-pointer">Logout</Button>}
             </div>
           </div>
         </header>
@@ -731,7 +731,7 @@ export default function App() {
       </main>
 
       <Dialog open={isExpenseModalOpen} onOpenChange={setExpenseModalOpen}>
-        <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-xl border-white rounded-2xl">
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle>Add Daily Expense</DialogTitle>
           </DialogHeader>
@@ -754,21 +754,21 @@ export default function App() {
             }
           }}>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
-              <Input name="date" type="date" defaultValue={today} className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl" required />
+              <label className="block text-sm font-medium text-foreground/90 mb-1">Date</label>
+              <Input name="date" type="date" defaultValue={today} className="bg-secondary focus-visible:ring-primary rounded-xl" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Amount (৳)</label>
-              <Input name="amount" type="number" min="0" step="0.01" placeholder="0.00" className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl" required />
+              <label className="block text-sm font-medium text-foreground/90 mb-1">Amount (৳)</label>
+              <Input name="amount" type="number" min="0" step="0.01" placeholder="0.00" className="bg-secondary focus-visible:ring-primary rounded-xl" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Items Description</label>
-              <Input name="description" type="text" placeholder="e.g., Rice, Chicken, Onion" className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl" required />
+              <label className="block text-sm font-medium text-foreground/90 mb-1">Items Description</label>
+              <Input name="description" type="text" placeholder="e.g., Rice, Chicken, Onion" className="bg-secondary focus-visible:ring-primary rounded-xl" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Purchased By</label>
+              <label className="block text-sm font-medium text-foreground/90 mb-1">Purchased By</label>
               <Select name="shopper_member_id">
-                <SelectTrigger className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl">
+                <SelectTrigger className="bg-secondary focus-visible:ring-primary rounded-xl">
                   <SelectValue placeholder="Select Shopper..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -778,14 +778,14 @@ export default function App() {
             </div>
             <div className="pt-4 flex gap-3">
               <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={() => setExpenseModalOpen(false)}>Cancel</Button>
-              <Button type="submit" className="flex-1 bg-teal-600 hover:bg-teal-700 text-white rounded-xl">Save Expense</Button>
+              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">Save Expense</Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isDepositModalOpen} onOpenChange={setDepositModalOpen}>
-        <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-xl border-white rounded-2xl">
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle>Add Member Deposit</DialogTitle>
           </DialogHeader>
@@ -808,13 +808,13 @@ export default function App() {
             }
           }}>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
-              <Input name="date" type="date" defaultValue={today} className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl" required />
+              <label className="block text-sm font-medium text-foreground/90 mb-1">Date</label>
+              <Input name="date" type="date" defaultValue={today} className="bg-secondary focus-visible:ring-primary rounded-xl" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Member</label>
+              <label className="block text-sm font-medium text-foreground/90 mb-1">Member</label>
               <Select name="member_id" required>
-                <SelectTrigger className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl">
+                <SelectTrigger className="bg-secondary focus-visible:ring-primary rounded-xl">
                   <SelectValue placeholder="Select Member..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -823,19 +823,19 @@ export default function App() {
               </Select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Amount (৳)</label>
-              <Input name="amount" type="number" min="0" step="0.01" placeholder="0.00" className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl" required />
+              <label className="block text-sm font-medium text-foreground/90 mb-1">Amount (৳)</label>
+              <Input name="amount" type="number" min="0" step="0.01" placeholder="0.00" className="bg-secondary focus-visible:ring-primary rounded-xl" required />
             </div>
             <div className="pt-4 flex gap-3">
               <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={() => setDepositModalOpen(false)}>Cancel</Button>
-              <Button type="submit" className="flex-1 bg-teal-600 hover:bg-teal-700 text-white rounded-xl">Add Deposit</Button>
+              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">Add Deposit</Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isMemberModalOpen} onOpenChange={setMemberModalOpen}>
-        <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-xl border-white rounded-2xl">
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-2xl">
           <DialogHeader>
             <DialogTitle>Add Member</DialogTitle>
           </DialogHeader>
@@ -857,47 +857,47 @@ export default function App() {
             }
           }}>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
-              <Input name="name" type="text" className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl" required />
+              <label className="block text-sm font-medium text-foreground/90 mb-1">Name</label>
+              <Input name="name" type="text" className="bg-secondary focus-visible:ring-primary rounded-xl" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
-              <Input name="phone" type="text" className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl" />
+              <label className="block text-sm font-medium text-foreground/90 mb-1">Phone</label>
+              <Input name="phone" type="text" className="bg-secondary focus-visible:ring-primary rounded-xl" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Entry Date</label>
-              <Input name="entry_date" type="date" defaultValue={today} className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl" required />
+              <label className="block text-sm font-medium text-foreground/90 mb-1">Entry Date</label>
+              <Input name="entry_date" type="date" defaultValue={today} className="bg-secondary focus-visible:ring-primary rounded-xl" required />
             </div>
             <div className="pt-4 flex gap-3">
               <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={() => setMemberModalOpen(false)}>Cancel</Button>
-              <Button type="submit" className="flex-1 bg-teal-600 hover:bg-teal-700 text-white rounded-xl">Add Member</Button>
+              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">Add Member</Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isShareModalOpen} onOpenChange={setShareModalOpen}>
-        <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-xl border-white rounded-2xl p-6">
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-2xl p-6">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <Share2 className="text-teal-600" size={20} />
+            <DialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+              <Share2 className="text-primary" size={20} />
               Share MessSync
             </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-6 mt-4">
-            <p className="text-sm text-slate-500 leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Connect other members to this meal management system. Make sure they are connected to the same <strong>Wi-Fi / Local Network (LAN)</strong>.
             </p>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Access Link</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Access Link</label>
               <div className="flex gap-2">
                 <Input
                   type="text"
                   value={shareUrl || "Loading link..."}
                   readOnly
-                  className="flex-1 bg-slate-50 border-slate-200 text-slate-700 font-medium rounded-xl select-all"
+                  className="flex-1 bg-secondary border-border text-foreground/90 font-medium rounded-xl select-all"
                 />
                 <Button
                   onClick={async () => {
@@ -910,7 +910,7 @@ export default function App() {
                       console.error("Failed to copy link", err);
                     }
                   }}
-                  className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl px-4 flex items-center gap-1.5 shrink-0 transition-all cursor-pointer"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-4 flex items-center gap-1.5 shrink-0 transition-all cursor-pointer"
                 >
                   {copied ? <Check size={16} /> : <Copy size={16} />}
                   {copied ? "Copied!" : "Copy"}
@@ -918,18 +918,18 @@ export default function App() {
               </div>
             </div>
 
-            <div className="flex flex-col items-center justify-center bg-slate-50/50 rounded-2xl p-6 border border-slate-100 space-y-4">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Scan to Open on Mobile</span>
-              <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-center">
+            <div className="flex flex-col items-center justify-center bg-secondary/50 rounded-2xl p-6 border border-border/50 space-y-4">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Scan to Open on Mobile</span>
+              <div className="bg-white p-3 rounded-2xl border border-border/50 flex items-center justify-center">
                 {shareUrl ? (
                   <canvas ref={qrCanvasRef} className="w-48 h-48 rounded-lg" />
                 ) : (
-                  <div className="w-48 h-48 flex items-center justify-center text-slate-400 text-sm">
+                  <div className="w-48 h-48 flex items-center justify-center text-muted-foreground/80 text-sm">
                     Generating QR Code...
                   </div>
                 )}
               </div>
-              <p className="text-[11px] text-slate-400 text-center">
+              <p className="text-[11px] text-muted-foreground/80 text-center">
                 Scan this QR code with your phone camera to open the application instantly.
               </p>
             </div>
@@ -938,7 +938,7 @@ export default function App() {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full rounded-xl border-slate-200 hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer"
+                className="w-full rounded-xl border-border hover:bg-secondary text-foreground/80 transition-colors cursor-pointer"
                 onClick={() => setShareModalOpen(false)}
               >
                 Close
@@ -952,18 +952,18 @@ export default function App() {
       {toastMessage && (
         <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
           <div className={`rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border p-4 pr-12 min-w-[300px] flex gap-3 backdrop-blur-md ${
-            toastMessage.type === 'success' ? 'bg-white/90 border-teal-200 text-slate-800' : 'bg-white/90 border-red-200 text-slate-800'
+            toastMessage.type === 'success' ? 'bg-card/90 border-primary/20 text-foreground' : 'bg-card/90 border-red-200 text-foreground'
           }`}>
-            <div className={`mt-0.5 rounded-full p-1 h-fit shrink-0 ${toastMessage.type === 'success' ? 'bg-teal-100 text-teal-600' : 'bg-red-100 text-red-600'}`}>
+            <div className={`mt-0.5 rounded-full p-1 h-fit shrink-0 ${toastMessage.type === 'success' ? 'bg-primary/15 text-primary' : 'bg-destructive/15 text-destructive'}`}>
               {toastMessage.type === 'success' ? <Check size={14} /> : <X size={14} />}
             </div>
             <div>
               <p className="font-semibold text-sm">{toastMessage.title}</p>
-              {toastMessage.message && <p className="text-xs text-slate-500 mt-0.5">{toastMessage.message}</p>}
+              {toastMessage.message && <p className="text-xs text-muted-foreground mt-0.5">{toastMessage.message}</p>}
             </div>
             <button 
               onClick={() => setToastMessage(null)} 
-              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 transition-colors"
+              className="absolute right-4 top-4 text-muted-foreground/80 hover:text-foreground/80 transition-colors"
             >
               <X size={16} />
             </button>
