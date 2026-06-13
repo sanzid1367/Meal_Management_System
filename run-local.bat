@@ -35,7 +35,12 @@ echo.
 
 :: 3. Start dev server
 echo [3/3] Starting Next.js Local Server...
-echo Open http://localhost:3000 in your browser.
+echo Opening http://localhost:3000 in your default browser...
 echo Press Ctrl+C in this terminal to stop it.
 echo.
+
+:: Asynchronously wait 3 seconds for the server to start, then open the browser
+start /b cmd /c "timeout /t 3 >nul && start http://localhost:3000"
+
 call npm run dev
+
