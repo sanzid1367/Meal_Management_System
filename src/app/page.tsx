@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Home, Users, Utensils, Receipt, Wallet, Calendar,
   Search, Bell, Settings, Plus, Minus, ChevronRight,
-  MoreVertical, X, FileText, CalendarDays, Share2, Copy, Check
+  MoreVertical, X, FileText, CalendarDays, Share2, Copy, Check, Loader2
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { format } from "date-fns";
@@ -52,6 +52,16 @@ export default function App() {
   const [shareData, setShareData] = useState<{ local_ip: string; port: number; share_url: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Loading & UX States
+  const [isSavingMeals, setIsSavingMeals] = useState(false);
+  const [isClosingMonth, setIsClosingMonth] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{title: string, message?: string, type: 'success' | 'error'} | null>(null);
+
+  const showToast = (title: string, message?: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage({ title, message, type });
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   const activeMembers = useMemo(() => members.filter(m => m.is_active), [members]);
   const monthLabel = summary?.month.name ?? format(new Date(), "yyyy-MM");
@@ -142,6 +152,7 @@ export default function App() {
   }
 
   async function saveMealGrid() {
+    setIsSavingMeals(true);
     const entries = activeMembers.flatMap((member) =>
       (["lunch", "dinner"] as const).map((meal_type) => ({
         member_id: member.id,
@@ -156,8 +167,12 @@ export default function App() {
       const dates = Array.from({ length: 15 }, (_, i) => format(new Date(new Date(mealDate).getTime() + (i - 7) * 86400000), "yyyy-MM-dd"));
       const fresh = await api.meals(dates[0], dates[14]);
       setMealEntries(fresh);
+      showToast("Meals Saved", "Successfully updated the daily meal grid.");
     } catch (e) {
       console.error(e);
+      showToast("Error", "Failed to save meals. Please try again.", "error");
+    } finally {
+      setIsSavingMeals(false);
     }
   }
 
@@ -369,7 +384,9 @@ export default function App() {
           </div>
           <div className="flex gap-2 items-center">
             <Input type="date" value={mealDate} onChange={e => setMealDate(e.target.value)} className="w-auto bg-white/60" />
-            {isAdmin && <Button onClick={saveMealGrid} className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-lg shadow-teal-600/30">Save</Button>}
+            {isAdmin && <Button disabled={isSavingMeals} onClick={saveMealGrid} className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-lg shadow-teal-600/30 transition-all disabled:opacity-70">
+              {isSavingMeals ? <><Loader2 className="animate-spin mr-2" size={16} /> Saving...</> : 'Save'}
+            </Button>}
           </div>
         </div>
 
@@ -671,12 +688,21 @@ export default function App() {
             <div className="absolute -right-4 -top-4 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
             <p className="text-xs text-teal-200 font-medium mb-1">Month End</p>
             <h4 className="font-bold text-sm mb-3">Close {monthLabel} &<br />Generate PDF</h4>
-            <Button onClick={() => {
+            <Button disabled={isClosingMonth} onClick={async () => {
               if (confirm('Are you sure you want to close this month?')) {
-                api.closeMonth().then(loadAll);
+                setIsClosingMonth(true);
+                try {
+                  await api.closeMonth();
+                  await loadAll();
+                  showToast("Month Closed", "A new month has been started.");
+                } catch (err) {
+                  showToast("Error", "Failed to close month.", "error");
+                } finally {
+                  setIsClosingMonth(false);
+                }
               }
-            }} className="bg-white text-teal-800 text-xs font-bold w-full hover:bg-teal-50 transition-colors">
-              Close Month
+            }} className="bg-white text-teal-800 text-xs font-bold w-full hover:bg-teal-50 transition-colors disabled:opacity-50">
+              {isClosingMonth ? <><Loader2 className="animate-spin mr-2" size={14} /> Closing...</> : 'Close Month'}
             </Button>
           </div>
         </div>
@@ -725,14 +751,20 @@ export default function App() {
           <form className="space-y-4 mt-4" onSubmit={async (e) => {
             e.preventDefault();
             const formData = new FormData(e.currentTarget);
-            await api.createExpense({
-              date: formData.get("date") as string,
-              amount: Number(formData.get("amount")),
-              description: formData.get("description") as string,
-              shopper_member_id: Number(formData.get("shopper_member_id")) || null
-            });
-            setExpenseModalOpen(false);
-            loadAll();
+            setExpenseModalOpen(false); // Optimistically close modal
+            try {
+              await api.createExpense({
+                date: formData.get("date") as string,
+                amount: Number(formData.get("amount")),
+                description: formData.get("description") as string,
+                shopper_member_id: Number(formData.get("shopper_member_id")) || null
+              });
+              await loadAll();
+              showToast("Expense Added", "The expense was recorded successfully.");
+            } catch (err) {
+              console.error(err);
+              showToast("Error", "Failed to record expense.", "error");
+            }
           }}>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
@@ -773,14 +805,20 @@ export default function App() {
           <form className="space-y-4 mt-4" onSubmit={async (e) => {
             e.preventDefault();
             const formData = new FormData(e.currentTarget);
-            await api.createDeposit({
-              date: formData.get("date") as string,
-              amount: Number(formData.get("amount")),
-              member_id: Number(formData.get("member_id")),
-              note: ""
-            });
-            setDepositModalOpen(false);
-            loadAll();
+            setDepositModalOpen(false); // Optimistically close
+            try {
+              await api.createDeposit({
+                date: formData.get("date") as string,
+                amount: Number(formData.get("amount")),
+                member_id: Number(formData.get("member_id")),
+                note: ""
+              });
+              await loadAll();
+              showToast("Deposit Added", "Member deposit recorded successfully.");
+            } catch (err) {
+              console.error(err);
+              showToast("Error", "Failed to add deposit.", "error");
+            }
           }}>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
@@ -817,13 +855,19 @@ export default function App() {
           <form className="space-y-4 mt-4" onSubmit={async (e) => {
             e.preventDefault();
             const formData = new FormData(e.currentTarget);
-            await api.createMember({
-              name: formData.get("name") as string,
-              phone: formData.get("phone") as string,
-              entry_date: formData.get("entry_date") as string
-            });
-            setMemberModalOpen(false);
-            loadAll();
+            setMemberModalOpen(false); // Optimistically close
+            try {
+              await api.createMember({
+                name: formData.get("name") as string,
+                phone: formData.get("phone") as string,
+                entry_date: formData.get("entry_date") as string
+              });
+              await loadAll();
+              showToast("Member Added", "New mess member joined successfully.");
+            } catch (err) {
+              console.error(err);
+              showToast("Error", "Failed to add member.", "error");
+            }
           }}>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
@@ -916,6 +960,29 @@ export default function App() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Toast Notification System */}
+      {toastMessage && (
+        <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
+          <div className={`rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border p-4 pr-12 min-w-[300px] flex gap-3 backdrop-blur-md ${
+            toastMessage.type === 'success' ? 'bg-white/90 border-teal-200 text-slate-800' : 'bg-white/90 border-red-200 text-slate-800'
+          }`}>
+            <div className={`mt-0.5 rounded-full p-1 h-fit shrink-0 ${toastMessage.type === 'success' ? 'bg-teal-100 text-teal-600' : 'bg-red-100 text-red-600'}`}>
+              {toastMessage.type === 'success' ? <Check size={14} /> : <X size={14} />}
+            </div>
+            <div>
+              <p className="font-semibold text-sm">{toastMessage.title}</p>
+              {toastMessage.message && <p className="text-xs text-slate-500 mt-0.5">{toastMessage.message}</p>}
+            </div>
+            <button 
+              onClick={() => setToastMessage(null)} 
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
