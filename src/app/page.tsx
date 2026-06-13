@@ -19,8 +19,6 @@ import { Badge } from "../components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { Auth } from "../components/Auth";
-
 const today = format(new Date(), "yyyy-MM-dd");
 
 export default function App() {
@@ -67,7 +65,6 @@ export default function App() {
   const monthLabel = summary?.month.name ?? format(new Date(), "yyyy-MM");
 
   async function loadAll() {
-    if (!user) return;
     try {
       const [nextSummary, nextMembers, nextDeposits, nextExpenses, nextSchedule] = await Promise.all([
         api.summary(),
@@ -91,10 +88,8 @@ export default function App() {
   }, [user?.id]);
 
   useEffect(() => {
-    if (user) {
-      api.shareInfo().then(setShareData).catch(console.error);
-    }
-  }, [user?.id]);
+    api.shareInfo().then(setShareData).catch(console.error);
+  }, []);
 
   const shareUrl = useMemo(() => {
     if (!shareData) return "";
@@ -129,7 +124,6 @@ export default function App() {
   }, [isShareModalOpen, shareUrl]);
 
   useEffect(() => {
-    if (!user) return;
     const dates = Array.from({ length: 15 }, (_, i) => format(new Date(new Date(mealDate).getTime() + (i - 7) * 86400000), "yyyy-MM-dd"));
     api.meals(dates[0], dates[14]).then((entries) => {
       setMealEntries(entries);
@@ -298,10 +292,6 @@ export default function App() {
       </div>
     </div>
   );
-
-  if (!user) {
-    return <Auth onLogin={setUser} />;
-  }
 
   const MembersView = () => (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -559,9 +549,7 @@ export default function App() {
         </div>
         <Button onClick={async () => {
           try {
-            const token = localStorage.getItem("access_token");
-            if (!token) throw new Error("No access token");
-            const res = await fetch('/api/export/summary.csv', { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await fetch('/api/export/summary.csv');
             if (!res.ok) throw new Error("Failed to export CSV");
             const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
@@ -684,27 +672,29 @@ export default function App() {
         </nav>
 
         <div className="p-4">
-          <div className="bg-gradient-to-br from-teal-600 to-teal-800 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
-            <div className="absolute -right-4 -top-4 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
-            <p className="text-xs text-teal-200 font-medium mb-1">Month End</p>
-            <h4 className="font-bold text-sm mb-3">Close {monthLabel} &<br />Generate PDF</h4>
-            <Button disabled={isClosingMonth} onClick={async () => {
-              if (confirm('Are you sure you want to close this month?')) {
-                setIsClosingMonth(true);
-                try {
-                  await api.closeMonth();
-                  await loadAll();
-                  showToast("Month Closed", "A new month has been started.");
-                } catch (err) {
-                  showToast("Error", "Failed to close month.", "error");
-                } finally {
-                  setIsClosingMonth(false);
+          {isAdmin && (
+            <div className="bg-gradient-to-br from-teal-600 to-teal-800 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
+              <div className="absolute -right-4 -top-4 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
+              <p className="text-xs text-teal-200 font-medium mb-1">Month End</p>
+              <h4 className="font-bold text-sm mb-3">Close {monthLabel} &<br />Generate PDF</h4>
+              <Button disabled={isClosingMonth} onClick={async () => {
+                if (confirm('Are you sure you want to close this month?')) {
+                  setIsClosingMonth(true);
+                  try {
+                    await api.closeMonth();
+                    await loadAll();
+                    showToast("Month Closed", "A new month has been started.");
+                  } catch (err) {
+                    showToast("Error", "Failed to close month.", "error");
+                  } finally {
+                    setIsClosingMonth(false);
+                  }
                 }
-              }
-            }} className="bg-white text-teal-800 text-xs font-bold w-full hover:bg-teal-50 transition-colors disabled:opacity-50">
-              {isClosingMonth ? <><Loader2 className="animate-spin mr-2" size={14} /> Closing...</> : 'Close Month'}
-            </Button>
-          </div>
+              }} className="bg-white text-teal-800 text-xs font-bold w-full hover:bg-teal-50 transition-colors disabled:opacity-50">
+                {isClosingMonth ? <><Loader2 className="animate-spin mr-2" size={14} /> Closing...</> : 'Close Month'}
+              </Button>
+            </div>
+          )}
         </div>
       </aside>
 
@@ -712,7 +702,7 @@ export default function App() {
         <header className="h-20 bg-white/20 backdrop-blur-md border-b border-white/30 px-8 flex items-center justify-between sticky top-0 shrink-0">
           <div>
             <h1 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
-              <span className="text-slate-500 font-normal">Welcome back,</span> Manager <span className="text-xl">👋</span>
+              <span className="text-slate-500 font-normal">Welcome{user ? ' back,' : ','}</span> {user ? 'Manager' : 'Viewer'} <span className="text-xl">👋</span>
             </h1>
           </div>
           <div className="flex items-center gap-4">
@@ -725,8 +715,8 @@ export default function App() {
               >
                 <Share2 size={16} /> Share System
               </Button>
-              <span className="text-sm font-medium text-slate-600 bg-white/50 px-3 py-1 rounded-full">{user.username} ({user.role})</span>
-              <Button variant="outline" size="sm" onClick={() => { localStorage.removeItem("access_token"); localStorage.removeItem("user"); window.location.reload(); }} className="rounded-xl border-slate-200 text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-colors">Logout</Button>
+              <span className="text-sm font-medium text-slate-600 bg-white/50 px-3 py-1 rounded-full">{user ? `${user.username} (${user.role})` : 'Viewer Mode'}</span>
+              {user && <Button variant="outline" size="sm" onClick={() => { localStorage.removeItem("access_token"); localStorage.removeItem("user"); window.location.reload(); }} className="rounded-xl border-slate-200 text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-colors cursor-pointer">Logout</Button>}
             </div>
           </div>
         </header>

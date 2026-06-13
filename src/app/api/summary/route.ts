@@ -6,10 +6,7 @@ import { initDb } from '@/lib/db';
 export async function GET(request: Request) {
   try {
     await initDb();
-    const user = await getCurrentUser(request);
-    if (!user) {
-      return NextResponse.json({ detail: "Not authenticated" }, { status: 401 });
-    }
+    
 
     const month = await getActiveMonth();
     const summary = await buildSummary(month.id);

@@ -24,10 +24,7 @@ export async function GET(request: Request) {
     await initDb();
     
     // Auth check
-    const user = await getCurrentUser(request);
-    if (!user) {
-      return NextResponse.json({ detail: "Not authenticated" }, { status: 401 });
-    }
+    
 
     const localIp = getLocalIp();
     const port = process.env.PORT || 3000;
