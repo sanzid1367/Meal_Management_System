@@ -29,7 +29,7 @@ if not exist ".env" (
     pause
     exit /b
 ) else (
-    echo [2/3] Environment configurations (.env) found.
+    echo [2/3] Environment configurations .env found.
 )
 echo.
 
