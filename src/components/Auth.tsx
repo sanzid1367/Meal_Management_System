@@ -26,53 +26,54 @@ export function Auth({ onLogin }: { onLogin: (user: any) => void }) {
     }
   };
 
+  const btnPrimary = "h-[40px] px-5 bg-[var(--primary)] text-[var(--on-primary)] font-medium rounded-md hover:bg-[var(--primary-active)] transition-colors inline-flex items-center justify-center gap-2 w-full";
+  const inputClass = "h-[40px] px-[14px] py-[10px] bg-[var(--canvas)] text-[var(--ink)] border border-[var(--hairline)] rounded-md focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] w-full text-[14px]";
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden font-sans">
-      <div className="absolute -top-40 -right-40 w-96 h-96 bg-teal-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
-      <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
-      
-      <div className="w-full max-w-md bg-white/80 backdrop-blur-xl p-8 rounded-3xl shadow-xl border border-white relative z-10">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--canvas)] font-sans px-4">
+      <div className="w-full max-w-sm bg-[var(--surface-card)] p-8 rounded-[12px] shadow-sm border border-[var(--hairline)]">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-blue-500 rounded-2xl flex items-center justify-center text-white mx-auto mb-4 shadow-lg shadow-teal-500/30">
-             <span className="text-2xl font-bold">M</span>
+          <div className="w-12 h-12 bg-[var(--ink)] rounded-full flex items-center justify-center mx-auto mb-6 relative">
+             <div className="w-full h-0.5 bg-[var(--canvas)] absolute"></div>
+             <div className="h-full w-0.5 bg-[var(--canvas)] absolute"></div>
           </div>
-          <h2 className="text-2xl font-bold text-slate-800">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
-          <p className="text-slate-500 text-sm mt-1">Mess Meal Manager</p>
+          <h2 className="text-[32px] font-heading tracking-[-0.5px] text-[var(--ink)]">{isLogin ? 'Welcome back' : 'Create account'}</h2>
+          <p className="text-[14px] text-[var(--muted)] mt-1">MessSync Admin Access</p>
         </div>
 
-        {error && <div className="mb-4 p-3 bg-red-50/50 border border-red-100 text-red-600 text-sm rounded-xl text-center">{error}</div>}
+        {error && <div className="mb-6 p-3 bg-[var(--error)]/10 border border-[var(--error)]/20 text-[var(--error)] text-[14px] rounded-md text-center">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
+            <label className="block text-[14px] font-medium text-[var(--ink)] mb-2">Username</label>
             <input 
               type="text" 
               required
               value={username}
               onChange={e => setUsername(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-200/50 rounded-xl px-4 py-2 outline-none transition-all"
-              placeholder="admin or member"
+              className={inputClass}
+              placeholder="admin"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+            <label className="block text-[14px] font-medium text-[var(--ink)] mb-2">Password</label>
             <input 
               type="password" 
               required
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-200/50 rounded-xl px-4 py-2 outline-none transition-all"
+              className={inputClass}
               placeholder="••••••••"
             />
           </div>
-          <button type="submit" className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2.5 rounded-xl shadow-lg shadow-teal-600/30 transition-all mt-6">
+          <button type="submit" className={btnPrimary + " mt-2"}>
             {isLogin ? 'Sign In' : 'Sign Up'}
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-slate-500">
+        <div className="mt-8 text-center text-[14px] text-[var(--muted)] border-t border-[var(--hairline)] pt-6">
           {isLogin ? "Don't have an account? " : "Already have an account? "}
-          <button onClick={() => setIsLogin(!isLogin)} className="text-teal-600 font-medium hover:text-teal-700 focus:outline-none">
+          <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-[var(--primary)] font-medium hover:underline focus:outline-none">
             {isLogin ? 'Sign up' : 'Log in'}
           </button>
         </div>

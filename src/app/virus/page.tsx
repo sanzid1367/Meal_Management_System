@@ -18,7 +18,7 @@ export default function VirusPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-[#e2f1f0]">
+    <div className="min-h-screen bg-[var(--canvas)]">
       <Auth onLogin={() => {
         router.push('/');
       }} />
