@@ -323,7 +323,7 @@ export default function App() {
               <tr key={member.id} className="hover:bg-slate-50/50 transition-colors">
                 <td className="p-4">
                   <div className="font-semibold text-slate-800">{member.name}</div>
-                  <div className="text-xs text-slate-500">{member.phone || '-'}</div>
+                  {isAdmin && member.phone && <div className="text-xs text-slate-500">{member.phone}</div>}
                 </td>
                 <td className="p-4">
                   {member.is_active ? <Badge className="bg-teal-100 text-teal-700 hover:bg-teal-200" variant="secondary">Active</Badge> : <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200" variant="secondary">Inactive</Badge>}

@@ -8,6 +8,9 @@ export async function GET(request: Request) {
     await initDb();
     
 
+    const adminUser = await getCurrentUser(request);
+    const isAdmin = adminUser?.role === 'admin';
+
     const { searchParams } = new URL(request.url);
     const includeInactive = searchParams.get('include_inactive') === 'true';
 
@@ -28,7 +31,8 @@ export async function GET(request: Request) {
     // Convert numbers to correct types (Postgres driver handles booleans/ints as numbers, but verify)
     const processed = members.map(m => ({
       ...m,
-      is_active: Number(m.is_active)
+      is_active: Number(m.is_active),
+      phone: isAdmin ? m.phone : null
     }));
 
     return NextResponse.json(processed);
