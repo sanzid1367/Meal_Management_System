@@ -2,17 +2,23 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  Share2, Copy, Check, Loader2, Plus, X, FileText
+  Home, Users, Utensils, Receipt, Wallet, Calendar,
+  Search, Bell, Settings, Plus, Minus, ChevronRight,
+  MoreVertical, X, FileText, CalendarDays, Share2, Copy, Check, Loader2
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { format } from "date-fns";
 import QRCode from 'qrcode';
 
 import { api } from "../lib/api";
-import type { Deposit, Expense, MealEntry, Member, ScheduleEntry, Summary } from "../types";
+import type { Deposit, Expense, MealEntry, Member, MemberSummary, ScheduleEntry, Summary } from "../types";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
-
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 const today = format(new Date(), "yyyy-MM-dd");
 
 export default function App() {
@@ -24,8 +30,9 @@ export default function App() {
     return null;
   });
   const isAdmin = user?.role === 'admin';
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'members' | 'meals' | 'expenses' | 'deposits' | 'reports'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'members' | 'meals' | 'expenses' | 'deposits' | 'schedule' | 'reports'>('dashboard');
 
+  // Real State from API
   const [summary, setSummary] = useState<Summary | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [deposits, setDeposits] = useState<Deposit[]>([]);
@@ -35,6 +42,7 @@ export default function App() {
   const [mealEntries, setMealEntries] = useState<MealEntry[]>([]);
   const [draftMeals, setDraftMeals] = useState<Record<string, number>>({});
 
+  // Modals
   const [isExpenseModalOpen, setExpenseModalOpen] = useState(false);
   const [isDepositModalOpen, setDepositModalOpen] = useState(false);
   const [isMemberModalOpen, setMemberModalOpen] = useState(false);
@@ -43,6 +51,7 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  // Loading & UX States
   const [isSavingMeals, setIsSavingMeals] = useState(false);
   const [isClosingMonth, setIsClosingMonth] = useState(false);
   const [toastMessage, setToastMessage] = useState<{title: string, message?: string, type: 'success' | 'error'} | null>(null);
@@ -96,8 +105,17 @@ export default function App() {
           QRCode.toCanvas(
             qrCanvasRef.current,
             shareUrl,
-            { width: 192, margin: 1, color: { dark: '#141413', light: '#faf9f5' } },
-            (err) => { if (err) console.error("Failed to generate QR code", err); }
+            {
+              width: 192,
+              margin: 1,
+              color: {
+                dark: '#0f172a',
+                light: '#ffffff'
+              }
+            },
+            (err) => {
+              if (err) console.error("Failed to generate QR code", err);
+            }
           );
         }
       }, 50);
@@ -146,7 +164,7 @@ export default function App() {
       showToast("Meals Saved", "Successfully updated the daily meal grid.");
     } catch (e) {
       console.error(e);
-      showToast("Error", "Failed to save meals.", "error");
+      showToast("Error", "Failed to save meals. Please try again.", "error");
     } finally {
       setIsSavingMeals(false);
     }
@@ -163,168 +181,177 @@ export default function App() {
       cost
     }));
   }, [expenses]);
-  
-  // Custom button class based on Anthropic tokens
-  const btnPrimary = "h-[40px] px-5 bg-[var(--primary)] text-[var(--on-primary)] font-medium rounded-md hover:bg-[var(--primary-active)] transition-colors inline-flex items-center justify-center gap-2";
-  const btnSecondary = "h-[40px] px-5 bg-[var(--canvas)] text-[var(--ink)] font-medium border border-[var(--hairline)] rounded-md hover:bg-[var(--surface-soft)] transition-colors inline-flex items-center justify-center gap-2 text-[14px]";
-  const inputClass = "h-[40px] px-[14px] py-[10px] bg-[var(--canvas)] text-[var(--ink)] border border-[var(--hairline)] rounded-md focus:outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] w-full text-[14px]";
 
   const DashboardView = () => (
-    <div className="space-y-[96px] animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
-      {/* Hero Band 6-6 Split */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-        <div>
-          <h1 className="text-[48px] md:text-[64px] font-heading font-normal tracking-[-1.5px] leading-[1.05] text-[var(--ink)] mb-6">
-            Manage your mess, <span className="text-[var(--primary)]">beautifully.</span>
-          </h1>
-          <p className="text-[18px] text-[var(--muted)] mb-8 max-w-md font-sans">
-            A clear, editorial view of your monthly meals, expenses, and member balances.
-          </p>
-          <div className="flex gap-4">
-            <button onClick={() => setActiveTab('meals')} className={btnPrimary}>
-              Update Daily Meals
-            </button>
-            <button onClick={() => setActiveTab('expenses')} className={btnSecondary}>
-              View Ledger
-            </button>
-          </div>
-        </div>
-        
-        {/* Right side artifact - Mockup Card Dark */}
-        <div className="bg-[var(--surface-dark)] rounded-[12px] p-[32px] text-[var(--on-dark)] dark-surface shadow-lg relative overflow-hidden">
-          <div className="flex justify-between items-start mb-12 relative z-10">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Top Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="bg-gradient-to-br from-white/60 to-white/30 backdrop-blur-md border-white/40 shadow-sm border rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-teal-100 text-teal-600 rounded-xl">
+                <Receipt size={24} />
+              </div>
+            </div>
+            <p className="text-slate-500 text-sm font-medium mb-1">Total Expense</p>
+            <h2 className="text-3xl font-bold text-slate-800">৳{summary?.totals.total_expense.toLocaleString() || 0}</h2>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-white/60 to-white/30 backdrop-blur-md border-white/40 shadow-sm border rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-indigo-100 text-indigo-600 rounded-xl">
+                <Utensils size={24} />
+              </div>
+            </div>
+            <p className="text-slate-500 text-sm font-medium mb-1">Current Meal Rate</p>
+            <h2 className="text-3xl font-bold text-slate-800">৳{summary?.totals.meal_rate.toFixed(2) || 0}</h2>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-white/60 to-white/30 backdrop-blur-md border-white/40 shadow-sm border rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-amber-100 text-amber-600 rounded-xl">
+                <Wallet size={24} />
+              </div>
+            </div>
+            <p className="text-slate-500 text-sm font-medium mb-1">Cash in Hand</p>
+            <h2 className="text-3xl font-bold text-slate-800">৳{summary?.totals.cash_in_hand.toLocaleString() || 0}</h2>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-teal-500 to-teal-700 border-none shadow-xl shadow-teal-500/20 text-white flex flex-col justify-between rounded-2xl">
+          <CardContent className="p-6 h-full flex flex-col justify-between">
             <div>
-              <p className="text-[13px] text-[var(--on-dark-soft)] mb-1 font-mono uppercase tracking-widest">Total Expense</p>
-              <h2 className="text-[36px] font-heading tracking-[-0.5px]">৳{summary?.totals.total_expense.toLocaleString() || 0}</h2>
+              <p className="text-teal-100 text-sm font-medium mb-1">Total Meals Served</p>
+              <h2 className="text-4xl font-bold">{summary?.totals.total_meals.toFixed(1) || 0}</h2>
             </div>
-            <div className="text-right">
-              <p className="text-[13px] text-[var(--on-dark-soft)] mb-1 font-mono uppercase tracking-widest">Meal Rate</p>
-              <h2 className="text-[36px] font-heading text-[var(--primary)] tracking-[-0.5px]">৳{summary?.totals.meal_rate.toFixed(2) || 0}</h2>
+            <div className="mt-4">
+              <button onClick={() => setActiveTab('meals')} className="text-sm bg-white/20 hover:bg-white/30 transition-colors py-2 px-4 rounded-lg w-full text-left flex justify-between items-center backdrop-blur-sm cursor-pointer">
+                Update Daily Meals <ChevronRight size={16} />
+              </button>
             </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-8 relative z-10">
-            <div>
-              <p className="text-[13px] text-[var(--on-dark-soft)] mb-1 font-mono">Cash in Hand</p>
-              <p className="text-[28px] font-heading tracking-[-0.3px]">৳{summary?.totals.cash_in_hand.toLocaleString() || 0}</p>
-            </div>
-            <div>
-              <p className="text-[13px] text-[var(--on-dark-soft)] mb-1 font-mono">Total Meals</p>
-              <p className="text-[28px] font-heading tracking-[-0.3px]">{summary?.totals.total_meals.toFixed(1) || 0}</p>
-            </div>
-          </div>
-          
-          {/* Decorative code chrome */}
-          <div className="mt-8 pt-6 border-t border-[var(--surface-dark-elevated)] flex gap-2">
-            <div className="w-3 h-3 rounded-full bg-[var(--error)] opacity-50"></div>
-            <div className="w-3 h-3 rounded-full bg-[var(--warning)] opacity-50"></div>
-            <div className="w-3 h-3 rounded-full bg-[var(--success)] opacity-50"></div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Secondary bands */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="bg-[var(--surface-card)] rounded-[12px] p-[32px] lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Chart area */}
+        <Card className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm p-6 lg:col-span-2 flex flex-col">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-[22px] font-heading text-[var(--ink)] tracking-[-0.5px]">Expense Trend</h3>
-            <button onClick={() => setActiveTab('expenses')} className="text-[14px] text-[var(--primary)] font-medium hover:underline">View details</button>
+            <h3 className="text-lg font-bold text-slate-800">Expense Trend ({format(new Date(expenses[0]?.date || today), 'MMM')})</h3>
+            <button onClick={() => setActiveTab('expenses')} className="text-teal-600 text-sm font-medium hover:underline cursor-pointer">View Ledger</button>
           </div>
-          <div className="h-[250px]">
+          <div className="flex-1 min-h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={expenseChartData.length ? expenseChartData : [{ day: '1', cost: 0 }]}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--hairline)" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: 'var(--muted)', fontSize: 12 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--muted)', fontSize: 12 }} dx={-10} />
-                <RechartsTooltip contentStyle={{ backgroundColor: 'var(--surface-dark)', color: 'var(--on-dark)', border: 'none', borderRadius: '8px' }} itemStyle={{ color: 'var(--on-dark)' }} />
-                <Line type="monotone" dataKey="cost" stroke="var(--primary)" strokeWidth={3} dot={{ r: 4, fill: 'var(--canvas)', strokeWidth: 2, stroke: 'var(--primary)' }} activeDot={{ r: 6 }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dx={-10} />
+                <RechartsTooltip
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Line type="monotone" dataKey="cost" stroke="#0d9488" strokeWidth={4} dot={{ r: 6, fill: '#0d9488', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 8 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-[var(--surface-card)] rounded-[12px] p-[32px]">
+        {/* Member Balances Mini-List */}
+        <Card className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm p-6 flex flex-col">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-[22px] font-heading text-[var(--ink)] tracking-[-0.5px]">Balances</h3>
-            <button onClick={() => setActiveTab('members')} className="text-[14px] text-[var(--primary)] font-medium hover:underline">View all</button>
+            <h3 className="text-lg font-bold text-slate-800">Member Balances</h3>
+            <button onClick={() => setActiveTab('members')} className="text-teal-600 text-sm font-medium hover:underline cursor-pointer">View All</button>
           </div>
-          <div className="space-y-4 max-h-[250px] overflow-y-auto custom-scrollbar pr-2">
-            {(summary?.member_summaries || []).filter(m => m.is_active).sort((a, b) => a.balance - b.balance).map((member) => (
-              <div key={member.id} className="flex justify-between items-center border-b border-[var(--hairline)] pb-3 last:border-0">
-                <div>
-                  <p className="text-[16px] font-medium text-[var(--ink)]">{member.name}</p>
-                  <p className="text-[13px] text-[var(--muted)]">{member.total_meals} meals</p>
+          <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+            {(summary?.member_summaries || []).filter(m => m.is_active).sort((a, b) => a.balance - b.balance).map((member, i) => (
+              <div key={member.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50/50 transition-colors border border-transparent hover:border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm
+                    ${i === 0 ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'}
+                  `}>
+                    {member.name.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-800">{member.name}</p>
+                    <p className="text-xs text-slate-500">{member.total_meals} meals</p>
+                  </div>
                 </div>
                 <div className="text-right">
-                  <p className={`text-[16px] font-medium ${member.balance >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}`}>
+                  <p className={`font-bold ${member.balance >= 0 ? 'text-teal-600' : 'text-red-500'}`}>
                     {member.balance >= 0 ? '+' : ''}৳{member.balance.toFixed(0)}
                   </p>
+                  <p className="text-xs text-slate-400">Balance</p>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );
 
   const MembersView = () => (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex justify-between items-end">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-[48px] font-heading tracking-[-1px] text-[var(--ink)] mb-2">Members</h2>
-          <p className="text-[16px] text-[var(--muted)]">Manage individuals and view personal ledgers.</p>
+          <h2 className="text-2xl font-bold text-slate-800">Mess Members</h2>
+          <p className="text-slate-500 text-sm">Manage member details and view individual summaries.</p>
         </div>
-        {isAdmin && <button onClick={() => setMemberModalOpen(true)} className={btnPrimary}><Plus size={16}/> Add Member</button>}
+        {isAdmin && <Button onClick={() => setMemberModalOpen(true)} className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-lg shadow-teal-600/30">
+          <Plus size={18} className="mr-2" /> Add Member
+        </Button>}
       </div>
 
-      <div className="bg-[var(--surface-card)] rounded-[12px] overflow-hidden">
+      <div className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-[var(--hairline)] text-[14px] text-[var(--muted)] font-medium bg-[var(--surface-cream-strong)]">
-              <th className="p-6">Name</th>
-              <th className="p-6">Status</th>
-              <th className="p-6">Deposits</th>
-              <th className="p-6">Meals</th>
-              <th className="p-6">Cost</th>
-              <th className="p-6">Balance</th>
-              <th className="p-6 text-right">Actions</th>
+            <tr className="border-b border-slate-200 text-slate-500 text-sm">
+              <th className="p-4 font-medium">Name</th>
+              <th className="p-4 font-medium">Status</th>
+              <th className="p-4 font-medium">Deposits</th>
+              <th className="p-4 font-medium">Meals</th>
+              <th className="p-4 font-medium">Total Cost</th>
+              <th className="p-4 font-medium">Balance</th>
+              <th className="p-4 font-medium text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--hairline)]">
+          <tbody className="divide-y divide-slate-100">
             {(summary?.member_summaries || []).map(member => (
-              <tr key={member.id} className="hover:bg-[var(--canvas)]/50 transition-colors">
-                <td className="p-6">
-                  <div className="text-[16px] font-medium text-[var(--ink)]">{member.name}</div>
-                  <div className="text-[13px] text-[var(--muted)]">{member.phone || 'No phone'}</div>
+              <tr key={member.id} className="hover:bg-slate-50/50 transition-colors">
+                <td className="p-4">
+                  <div className="font-semibold text-slate-800">{member.name}</div>
+                  <div className="text-xs text-slate-500">{member.phone || '-'}</div>
                 </td>
-                <td className="p-6">
-                  {member.is_active ? 
-                    <span className="px-3 py-1 bg-[var(--success)]/10 text-[var(--success)] text-[12px] font-medium uppercase tracking-widest rounded-full">Active</span> : 
-                    <span className="px-3 py-1 bg-[var(--muted)]/10 text-[var(--muted)] text-[12px] font-medium uppercase tracking-widest rounded-full">Inactive</span>
-                  }
+                <td className="p-4">
+                  {member.is_active ? <Badge className="bg-teal-100 text-teal-700 hover:bg-teal-200" variant="secondary">Active</Badge> : <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200" variant="secondary">Inactive</Badge>}
                 </td>
-                <td className="p-6 text-[16px] text-[var(--ink)]">৳{member.total_deposit}</td>
-                <td className="p-6 text-[16px] text-[var(--ink)]">{member.total_meals}</td>
-                <td className="p-6 text-[16px] text-[var(--ink)]">৳{member.meal_cost.toFixed(2)}</td>
-                <td className="p-6">
-                  <span className={`font-medium ${member.balance >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}`}>
+                <td className="p-4 font-medium text-slate-700">৳{member.total_deposit}</td>
+                <td className="p-4 text-slate-600">{member.total_meals}</td>
+                <td className="p-4 text-slate-600">৳{member.meal_cost.toFixed(2)}</td>
+                <td className="p-4">
+                  <span className={`font-bold px-2 py-1 rounded-md ${member.balance >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
                     {member.balance >= 0 ? '+' : ''}৳{member.balance.toFixed(2)}
                   </span>
                 </td>
-                <td className="p-6 text-right">
+                <td className="p-4 text-right">
                   {isAdmin && (
-                    <button 
+                    <Button 
+                      variant="outline" 
+                      size="sm"
                       onClick={async () => {
-                        if (member.is_active && !confirm(`Drop ${member.name}?`)) return;
+                        if (member.is_active) {
+                          if (!confirm(`Are you sure you want to drop ${member.name}? They will be marked as inactive.`)) return;
+                        }
                         await api.updateMember(member.id, { is_active: member.is_active ? 0 : 1 });
                         loadAll();
-                      }}
-                      className="text-[13px] font-medium text-[var(--muted)] hover:text-[var(--ink)] underline"
+                      }} 
+                      className={`text-xs rounded-lg transition-colors cursor-pointer ${member.is_active ? 'text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200' : 'text-teal-600 hover:bg-teal-50 hover:text-teal-700 border-teal-200'}`}
                     >
-                      {member.is_active ? 'Drop' : 'Restore'}
-                    </button>
+                      {member.is_active ? 'Drop Member' : 'Restore Member'}
+                    </Button>
                   )}
                 </td>
               </tr>
@@ -337,68 +364,79 @@ export default function App() {
 
   const MealsView = () => {
     const dates = Array.from({ length: 15 }, (_, i) => format(new Date(new Date(mealDate).getTime() + (i - 7) * 86400000), "yyyy-MM-dd"));
+
     return (
-      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="flex justify-between items-end">
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col flex-1 min-h-0">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
           <div>
-            <h2 className="text-[48px] font-heading tracking-[-1px] text-[var(--ink)] mb-2">Meal Grid</h2>
-            <p className="text-[16px] text-[var(--muted)]">Daily lunch and dinner tracking.</p>
+            <h2 className="text-2xl font-bold text-slate-800">Daily Meal Entry</h2>
+            <p className="text-slate-500 text-sm">Record lunch and dinner counts.</p>
           </div>
-          <div className="flex gap-4">
-            <input type="date" value={mealDate} onChange={e => setMealDate(e.target.value)} className={inputClass} style={{width: 'auto'}} />
-            {isAdmin && <button disabled={isSavingMeals} onClick={saveMealGrid} className={btnPrimary}>
-              {isSavingMeals ? <Loader2 className="animate-spin" size={16} /> : 'Save Meals'}
-            </button>}
+          <div className="flex gap-2 items-center">
+            <Input type="date" value={mealDate} onChange={e => setMealDate(e.target.value)} className="w-auto bg-white/60" />
+            {isAdmin && <Button disabled={isSavingMeals} onClick={saveMealGrid} className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-lg shadow-teal-600/30 transition-all disabled:opacity-70">
+              {isSavingMeals ? <><Loader2 className="animate-spin mr-2" size={16} /> Saving...</> : 'Save'}
+            </Button>}
           </div>
         </div>
 
-        <div className="bg-[var(--surface-dark)] text-[var(--on-dark)] rounded-[12px] p-[24px] overflow-hidden dark-surface">
-          <div className="overflow-auto custom-scrollbar rounded-lg border border-[var(--surface-dark-elevated)]">
-            <table className="w-full text-center border-collapse font-mono text-[14px]">
-              <thead className="bg-[var(--surface-dark-elevated)] text-[var(--on-dark-soft)]">
+        <div className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm flex-1 overflow-hidden flex flex-col">
+          <div className="overflow-auto custom-scrollbar flex-1">
+            <table className="w-full text-center border-collapse min-w-[800px]">
+              <thead className="sticky top-0 bg-white/90 backdrop-blur-md z-10 shadow-sm">
                 <tr>
-                  <th className="p-3 border-b border-r border-[var(--surface-dark-elevated)] sticky left-0 bg-[var(--surface-dark-elevated)] z-20 text-left font-normal w-32">Date</th>
+                  <th className="p-3 border-b border-r border-slate-200 text-left sticky left-0 bg-white/90 backdrop-blur-md z-20 w-32">
+                    <span className="text-sm font-medium text-slate-500">Date</span>
+                  </th>
                   {activeMembers.map(member => (
-                    <th key={member.id} colSpan={2} className="p-3 border-b border-r border-[var(--surface-dark-elevated)] font-normal truncate max-w-[120px]" title={member.name}>
-                      {member.name}
+                    <th key={member.id} colSpan={2} className="p-2 border-b border-r border-slate-200 min-w-[140px]">
+                      <div className="text-sm font-bold text-slate-700 truncate max-w-[140px]" title={member.name}>{member.name}</div>
                     </th>
                   ))}
                 </tr>
                 <tr>
-                  <th className="p-2 border-b border-r border-[var(--surface-dark-elevated)] sticky left-0 bg-[var(--surface-dark-elevated)] z-20"></th>
+                  <th className="p-2 border-b border-r border-slate-200 sticky left-0 bg-white/90 backdrop-blur-md z-20"></th>
                   {activeMembers.map(member => (
                     <React.Fragment key={`${member.id}-sub`}>
-                      <th className="p-1 border-b border-r border-[var(--surface-dark-elevated)] text-[11px] font-normal text-[var(--muted-soft)] bg-[var(--surface-dark-elevated)]/50 min-w-[60px]">L</th>
-                      <th className="p-1 border-b border-r border-[var(--surface-dark-elevated)] text-[11px] font-normal text-[var(--muted-soft)] bg-[var(--surface-dark-elevated)]/50 min-w-[60px]">D</th>
+                      <th className="p-1 border-b border-r border-slate-100 text-[10px] font-medium text-slate-500 bg-slate-50/50 min-w-[70px]">L</th>
+                      <th className="p-1 border-b border-r border-slate-200 text-[10px] font-medium text-slate-500 bg-slate-50/50 min-w-[70px]">D</th>
                     </React.Fragment>
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-[var(--surface-dark)]">
+              <tbody>
                 {dates.map(date => {
                   const dayNum = parseInt(date.split('-')[2]);
                   const isSelected = date === mealDate;
                   return (
-                    <tr key={date} className={`hover:bg-[var(--surface-dark-elevated)]/50 transition-colors ${isSelected ? 'bg-[var(--surface-dark-elevated)] border-l-2 border-l-[var(--primary)]' : ''}`}>
-                      <td className={`p-3 border-b border-r border-[var(--surface-dark-elevated)] text-left sticky left-0 bg-[var(--surface-dark)] z-10 ${isSelected ? 'text-[var(--primary)]' : 'text-[var(--on-dark)]'} font-sans`}>
-                        {dayNum} <span className="text-[12px] opacity-50 uppercase tracking-wider ml-1">{format(new Date(date), "MMM")}</span>
+                    <tr key={date} className={`hover:bg-slate-50/30 ${isSelected ? 'bg-teal-50/20' : ''}`}>
+                      <td className={`p-3 border-b border-r border-slate-200 text-left sticky left-0 bg-white/90 font-medium z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] ${isSelected ? 'text-teal-700' : 'text-slate-700'}`}>
+                        {dayNum} <span className="text-xs text-slate-400 font-normal uppercase">{format(new Date(date), "MMM")}</span>
                       </td>
                       {activeMembers.map(member => {
                         const renderInput = (type: 'lunch' | 'dinner', val: number) => {
                           if (!isSelected || !isAdmin) {
-                            return <td className={`p-2 border-b border-r border-[var(--surface-dark-elevated)] ${val > 0 ? 'text-[var(--on-dark)]' : 'text-[var(--on-dark-soft)] opacity-30'}`}>{val > 0 ? val : '-'}</td>;
+                            return (
+                              <td className={`p-2 border-b border-r border-slate-100 ${val > 0 ? 'bg-slate-100/50 text-slate-700 font-medium' : 'text-slate-400'} text-base`}>
+                                {val > 0 ? val : '-'}
+                              </td>
+                            );
                           }
                           return (
-                            <td className="p-1 border-b border-r border-[var(--surface-dark-elevated)] bg-[var(--surface-dark-elevated)]/30">
+                            <td className={`p-2 border-b border-r border-slate-100 ${val > 0 ? 'bg-teal-50/50' : ''}`}>
                               <input
-                                type="number" step="0.5" min="0" value={val === 0 ? '' : val}
+                                type="number"
+                                step="0.5"
+                                min="0"
+                                value={val === 0 ? '' : val}
                                 onChange={(e) => setMealValue(date, member.id, type, 'count', Number(e.target.value))}
-                                className="w-full bg-[var(--surface-dark-soft)] text-[var(--on-dark)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)] rounded p-1 text-center font-mono placeholder-[var(--on-dark-soft)]/30"
+                                className="w-full min-w-[60px] h-8 text-center bg-transparent text-base focus:outline-none focus:bg-white focus:ring-2 focus:ring-teal-500 rounded px-1 py-1 text-slate-800 font-medium placeholder-slate-300"
                                 placeholder="-"
                               />
                             </td>
                           );
                         }
+
                         return (
                           <React.Fragment key={`${date}-${member.id}`}>
                             {renderInput('lunch', mealValue(date, member.id, 'lunch', 'count'))}
@@ -418,32 +456,41 @@ export default function App() {
   };
 
   const ExpensesView = () => (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex justify-between items-end">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-[48px] font-heading tracking-[-1px] text-[var(--ink)] mb-2">Ledger</h2>
-          <p className="text-[16px] text-[var(--muted)]">Track all daily market expenses.</p>
+          <h2 className="text-2xl font-bold text-slate-800">Expenses & Bazar</h2>
+          <p className="text-slate-500 text-sm">Track daily shopping costs.</p>
         </div>
-        {isAdmin && <button onClick={() => setExpenseModalOpen(true)} className={btnPrimary}><Plus size={16}/> Add Expense</button>}
+        {isAdmin && <Button onClick={() => setExpenseModalOpen(true)} className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-lg shadow-teal-600/30">
+          <Plus size={18} className="mr-2" /> Add Expense
+        </Button>}
       </div>
 
-      <div className="bg-[var(--surface-card)] rounded-[12px] overflow-hidden">
+      <div className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-[var(--hairline)] text-[14px] text-[var(--muted)] font-medium bg-[var(--surface-cream-strong)]">
-              <th className="p-6">Date</th>
-              <th className="p-6">Description</th>
-              <th className="p-6">Shopper</th>
-              <th className="p-6 text-right">Amount</th>
+            <tr className="border-b border-slate-200 text-slate-500 text-sm bg-slate-50/50">
+              <th className="p-4 font-medium">Date</th>
+              <th className="p-4 font-medium">Description</th>
+              <th className="p-4 font-medium">Shopper</th>
+              <th className="p-4 font-medium text-right">Amount</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--hairline)]">
+          <tbody className="divide-y divide-slate-100">
             {expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(exp => (
-              <tr key={exp.id} className="hover:bg-[var(--canvas)]/50 transition-colors">
-                <td className="p-6 text-[14px] text-[var(--muted)]">{exp.date}</td>
-                <td className="p-6 text-[16px] text-[var(--ink)]">{exp.description}</td>
-                <td className="p-6 text-[15px] text-[var(--ink)]">{exp.shopper_name || '-'}</td>
-                <td className="p-6 text-[16px] font-medium text-[var(--ink)] text-right">৳{exp.amount.toLocaleString()}</td>
+              <tr key={exp.id} className="hover:bg-slate-50/50 transition-colors">
+                <td className="p-4 text-slate-600 whitespace-nowrap">{exp.date}</td>
+                <td className="p-4 text-slate-800">{exp.description}</td>
+                <td className="p-4 text-slate-600">
+                  <span className="inline-flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-slate-200 text-[10px] flex items-center justify-center font-bold text-slate-600">
+                      {(exp.shopper_name || '?').substring(0, 2).toUpperCase()}
+                    </span>
+                    {exp.shopper_name || '-'}
+                  </span>
+                </td>
+                <td className="p-4 font-bold text-slate-800 text-right">৳{exp.amount.toLocaleString()}</td>
               </tr>
             ))}
           </tbody>
@@ -453,32 +500,40 @@ export default function App() {
   );
 
   const DepositsView = () => (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex justify-between items-end">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-[48px] font-heading tracking-[-1px] text-[var(--ink)] mb-2">Deposits</h2>
-          <p className="text-[16px] text-[var(--muted)]">Money collected from members.</p>
+          <h2 className="text-2xl font-bold text-slate-800">Member Deposits</h2>
+          <p className="text-slate-500 text-sm">Money collected for the month.</p>
         </div>
-        {isAdmin && <button onClick={() => setDepositModalOpen(true)} className={btnPrimary}><Plus size={16}/> Add Deposit</button>}
+        {isAdmin && <Button onClick={() => setDepositModalOpen(true)} className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-lg shadow-teal-600/30">
+          <Plus size={18} className="mr-2" /> Add Deposit
+        </Button>}
       </div>
 
-      <div className="bg-[var(--surface-card)] rounded-[12px] overflow-hidden">
+      <div className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-[var(--hairline)] text-[14px] text-[var(--muted)] font-medium bg-[var(--surface-cream-strong)]">
-              <th className="p-6">Date</th>
-              <th className="p-6">Member</th>
-              <th className="p-6 text-right">Amount</th>
+            <tr className="border-b border-slate-200 text-slate-500 text-sm bg-slate-50/50">
+              <th className="p-4 font-medium">Date</th>
+              <th className="p-4 font-medium">Member</th>
+              <th className="p-4 font-medium text-right">Amount</th>
+              <th className="p-4 font-medium text-center">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--hairline)]">
-            {deposits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(dep => (
-              <tr key={dep.id} className="hover:bg-[var(--canvas)]/50 transition-colors">
-                <td className="p-6 text-[14px] text-[var(--muted)]">{dep.date}</td>
-                <td className="p-6 text-[16px] text-[var(--ink)]">{dep.member_name || 'Unknown'}</td>
-                <td className="p-6 text-[16px] font-medium text-[var(--primary)] text-right">৳{dep.amount.toLocaleString()}</td>
-              </tr>
-            ))}
+          <tbody className="divide-y divide-slate-100">
+            {deposits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(dep => {
+              return (
+                <tr key={dep.id} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="p-4 text-slate-600 whitespace-nowrap">{dep.date}</td>
+                  <td className="p-4 font-medium text-slate-800">{dep.member_name || 'Unknown'}</td>
+                  <td className="p-4 font-bold text-teal-700 text-right">৳{dep.amount.toLocaleString()}</td>
+                  <td className="p-4 text-center">
+                    <Badge className="bg-green-100 text-green-700 hover:bg-green-200" variant="secondary">Received</Badge>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -486,169 +541,204 @@ export default function App() {
   );
 
   const ReportsView = () => (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex justify-between items-end">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col h-full">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
         <div>
-          <h2 className="text-[48px] font-heading tracking-[-1px] text-[var(--ink)] mb-2">Report</h2>
-          <p className="text-[16px] text-[var(--muted)]">Comprehensive summary for {monthLabel}.</p>
+          <h2 className="text-2xl font-bold text-slate-800">Monthly Report</h2>
+          <p className="text-slate-500 text-sm">Comprehensive summary of all expenses, deposits, and balances.</p>
         </div>
-        <div className="flex gap-4">
-          <button onClick={async () => {
-            try {
-              const res = await fetch('/api/export/summary.csv');
-              if (!res.ok) throw new Error("Failed to export CSV");
-              const blob = await res.blob();
-              const url = window.URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `mess-summary-${monthLabel}.csv`;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              window.URL.revokeObjectURL(url);
-            } catch (err) {
-              alert("Failed to export CSV");
-            }
-          }} className={btnSecondary}>
-            <FileText size={16} /> Export CSV
-          </button>
-          
-          {isAdmin && (
-            <button disabled={isClosingMonth} onClick={async () => {
-              if (confirm('Are you sure you want to close this month?')) {
-                setIsClosingMonth(true);
-                try {
-                  await api.closeMonth();
-                  await loadAll();
-                  showToast("Month Closed", "A new month has been started.");
-                } catch (err) {
-                  showToast("Error", "Failed to close month.", "error");
-                } finally {
-                  setIsClosingMonth(false);
-                }
-              }
-            }} className="h-[40px] px-5 bg-[var(--surface-dark)] text-[var(--on-dark)] font-medium rounded-md hover:bg-[var(--ink)] transition-colors disabled:opacity-50 inline-flex items-center gap-2">
-              {isClosingMonth ? <Loader2 className="animate-spin" size={16} /> : 'Close Month'}
-            </button>
-          )}
-        </div>
+        <Button onClick={async () => {
+          try {
+            const res = await fetch('/api/export/summary.csv');
+            if (!res.ok) throw new Error("Failed to export CSV");
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mess-summary-${monthLabel}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+          } catch (err) {
+            console.error("Export failed", err);
+            alert("Failed to export CSV");
+          }
+        }} className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-lg shadow-teal-600/30">
+          <FileText size={18} className="mr-2" /> Export CSV
+        </Button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-[var(--surface-card)] rounded-lg p-6 border border-[var(--hairline)]">
-          <p className="text-[13px] text-[var(--muted)] font-mono uppercase tracking-widest mb-2">Total Expenses</p>
-          <h3 className="text-[28px] font-heading tracking-[-0.5px]">৳{summary?.totals?.total_expense?.toLocaleString() || 0}</h3>
-        </div>
-        <div className="bg-[var(--surface-card)] rounded-lg p-6 border border-[var(--hairline)]">
-          <p className="text-[13px] text-[var(--muted)] font-mono uppercase tracking-widest mb-2">Total Deposits</p>
-          <h3 className="text-[28px] font-heading tracking-[-0.5px]">৳{summary?.totals?.total_deposit?.toLocaleString() || 0}</h3>
-        </div>
-        <div className="bg-[var(--surface-card)] rounded-lg p-6 border border-[var(--hairline)]">
-          <p className="text-[13px] text-[var(--muted)] font-mono uppercase tracking-widest mb-2">Total Meals</p>
-          <h3 className="text-[28px] font-heading tracking-[-0.5px]">{summary?.totals?.total_meals?.toFixed(1) || 0}</h3>
-        </div>
-        <div className="bg-[var(--primary)]/10 rounded-lg p-6 border border-[var(--primary)]/20">
-          <p className="text-[13px] text-[var(--primary)] font-mono uppercase tracking-widest mb-2">Meal Rate</p>
-          <h3 className="text-[28px] font-heading text-[var(--primary)] tracking-[-0.5px]">৳{summary?.totals?.meal_rate?.toFixed(2) || 0}</h3>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 shrink-0">
+        <Card className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm p-4">
+          <p className="text-slate-500 text-xs font-medium mb-1">Total Expenses</p>
+          <h3 className="text-xl font-bold text-slate-800">৳{summary?.totals?.total_expense?.toLocaleString() || 0}</h3>
+        </Card>
+        <Card className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm p-4">
+          <p className="text-slate-500 text-xs font-medium mb-1">Total Deposits</p>
+          <h3 className="text-xl font-bold text-slate-800">৳{summary?.totals?.total_deposit?.toLocaleString() || 0}</h3>
+        </Card>
+        <Card className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm p-4">
+          <p className="text-slate-500 text-xs font-medium mb-1">Total Meals</p>
+          <h3 className="text-xl font-bold text-slate-800">{summary?.totals?.total_meals?.toFixed(1) || 0}</h3>
+        </Card>
+        <Card className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm p-4">
+          <p className="text-slate-500 text-xs font-medium mb-1">Meal Rate</p>
+          <h3 className="text-xl font-bold text-teal-700">৳{summary?.totals?.meal_rate?.toFixed(2) || 0}</h3>
+        </Card>
       </div>
 
-      <div className="bg-[var(--surface-card)] rounded-[12px] overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-[var(--hairline)] text-[14px] text-[var(--muted)] font-medium bg-[var(--surface-cream-strong)]">
-              <th className="p-6">Member Name</th>
-              <th className="p-6 text-right">Opening Bal.</th>
-              <th className="p-6 text-right">Deposits</th>
-              <th className="p-6 text-center">Meals</th>
-              <th className="p-6 text-right">Cost</th>
-              <th className="p-6 text-right">Due/Refund</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--hairline)]">
-            {(summary?.member_summaries || []).filter(m => m.is_active || m.balance !== 0).map(member => (
-              <tr key={member.id} className="hover:bg-[var(--canvas)]/50 transition-colors">
-                <td className="p-6 text-[16px] font-medium text-[var(--ink)]">
-                  {member.name} {!member.is_active && <span className="ml-2 text-[11px] text-[var(--muted)] uppercase tracking-wider">Inactive</span>}
-                </td>
-                <td className="p-6 text-[16px] text-[var(--muted)] text-right">৳{member.opening_balance?.toFixed(2) || 0}</td>
-                <td className="p-6 text-[16px] text-[var(--primary)] font-medium text-right">৳{member.total_deposit?.toLocaleString() || 0}</td>
-                <td className="p-6 text-[16px] text-[var(--ink)] text-center">{member.total_meals || 0}</td>
-                <td className="p-6 text-[16px] text-[var(--ink)] text-right">৳{member.meal_cost?.toFixed(2) || 0}</td>
-                <td className="p-6 text-right">
-                  <span className={`font-medium ${member.balance >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}`}>
-                    {member.balance >= 0 ? '+' : ''}৳{member.balance?.toFixed(2) || 0}
-                  </span>
-                </td>
+      <div className="bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm flex-1 overflow-hidden flex flex-col min-h-0">
+        <div className="overflow-auto custom-scrollbar flex-1">
+          <table className="w-full text-left border-collapse min-w-[800px]">
+            <thead className="sticky top-0 bg-white/90 backdrop-blur-md z-10 shadow-sm">
+              <tr className="border-b border-slate-200 text-slate-500 text-sm">
+                <th className="p-4 font-medium">Member Name</th>
+                <th className="p-4 font-medium text-right">Opening Bal.</th>
+                <th className="p-4 font-medium text-right">Deposits</th>
+                <th className="p-4 font-medium text-center">Meals</th>
+                <th className="p-4 font-medium text-right">Per Person Cost</th>
+                <th className="p-4 font-medium text-right">Due/Refund</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {(summary?.member_summaries || []).filter(m => m.is_active || m.balance !== 0).map(member => (
+                <tr key={member.id} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="p-4 font-semibold text-slate-800">
+                    {member.name}
+                    {!member.is_active && <Badge className="ml-2 bg-slate-100 text-slate-500 text-[10px]" variant="secondary">Inactive</Badge>}
+                  </td>
+                  <td className="p-4 text-slate-600 text-right">৳{member.opening_balance?.toFixed(2) || 0}</td>
+                  <td className="p-4 text-teal-700 font-medium text-right">৳{member.total_deposit?.toLocaleString() || 0}</td>
+                  <td className="p-4 text-slate-600 text-center">{member.total_meals || 0}</td>
+                  <td className="p-4 text-slate-600 text-right">৳{member.meal_cost?.toFixed(2) || 0}</td>
+                  <td className="p-4 text-right">
+                    <span className={`font-bold px-2 py-1 rounded-md ${member.balance >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                      {member.balance >= 0 ? '+' : ''}৳{member.balance?.toFixed(2) || 0}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
 
-  return (
-    <div className="min-h-screen bg-[var(--canvas)] text-[var(--ink)] font-sans flex flex-col relative w-full">
-      {/* Top Navigation */}
-      <header className="h-[64px] bg-[var(--canvas)] border-b border-[var(--hairline)] px-6 md:px-12 flex items-center justify-between sticky top-0 z-50 shrink-0">
-        <div className="flex items-center gap-8">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-[var(--ink)] rounded-full flex items-center justify-center relative">
-              <div className="w-full h-0.5 bg-[var(--canvas)] absolute"></div>
-              <div className="h-full w-0.5 bg-[var(--canvas)] absolute"></div>
-            </div>
-            <span className="text-[18px] font-bold text-[var(--ink)] tracking-tight">MessSync</span>
-          </div>
-          <nav className="hidden md:flex gap-6">
-            {(['dashboard', 'members', 'meals', 'expenses', 'deposits', 'reports'] as const).map(tab => (
-              <button 
-                key={tab}
-                onClick={() => setActiveTab(tab)} 
-                className={`text-[14px] font-medium capitalize transition-colors hover:text-[var(--ink)] ${activeTab === tab ? 'text-[var(--ink)]' : 'text-[var(--muted)]'}`}
-              >
-                {tab}
-              </button>
-            ))}
-          </nav>
-        </div>
-        <div className="flex items-center gap-6">
-          <button onClick={() => setShareModalOpen(true)} className="hidden md:flex text-[14px] font-medium text-[var(--ink)] items-center gap-1.5 hover:text-[var(--primary)] transition-colors">
-            <Share2 size={16} /> Share
-          </button>
-          <div className="flex items-center gap-4 border-l border-[var(--hairline)] pl-6">
-            <span className="text-[14px] font-medium text-[var(--muted)] hidden sm:inline-block">{user ? `${user.username}` : 'Viewer'}</span>
-            {user ? (
-              <button onClick={() => { localStorage.removeItem("access_token"); localStorage.removeItem("user"); window.location.reload(); }} className={btnSecondary + " !h-[32px] !px-4 !text-[13px]"}>Logout</button>
-            ) : (
-              <button className={btnPrimary + " !h-[32px] !px-4 !text-[13px]"}>Sign in</button>
-            )}
-          </div>
-        </div>
-      </header>
+  const SidebarItem = ({ id, icon: Icon, label }: { id: typeof activeTab, icon: any, label: string }) => {
+    const active = activeTab === id;
+    return (
+      <button
+        onClick={() => setActiveTab(id)}
+        className={`transition-all duration-300 ease-in-out font-medium rounded-xl flex items-center gap-3 px-4 py-3 w-full cursor-pointer
+          ${active ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30' : 'text-slate-500 hover:bg-white/50 hover:text-teal-700'}`}
+      >
+        <Icon size={20} /> {label}
+      </button>
+    );
+  };
 
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-auto">
-        <div className="max-w-[1200px] mx-auto w-full px-6 py-[96px]">
-          {activeTab === 'dashboard' && DashboardView()}
-          {activeTab === 'members' && MembersView()}
-          {activeTab === 'meals' && MealsView()}
-          {activeTab === 'expenses' && ExpensesView()}
-          {activeTab === 'deposits' && DepositsView()}
-          {activeTab === 'reports' && ReportsView()}
+  return (
+    <div className="min-h-screen bg-[#e2f1f0] text-slate-800 font-sans flex overflow-hidden selection:bg-teal-200 relative w-full">
+      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-teal-200/50 blur-[100px]"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-200/40 blur-[120px]"></div>
+        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-purple-200/30 blur-[90px]"></div>
+      </div>
+
+      <aside className="w-64 bg-white/40 backdrop-blur-2xl border-r border-white/50 flex-col shadow-[4px_0_24px_rgba(0,0,0,0.02)] hidden md:flex z-20">
+        <div className="p-6 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-teal-600/30">
+            M
+          </div>
+          <span className="text-xl font-extrabold tracking-tight text-slate-800">Mess<span className="text-teal-600">Sync</span></span>
+        </div>
+
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+          <SidebarItem id="dashboard" icon={Home} label="Dashboard" />
+          <SidebarItem id="members" icon={Users} label="Members" />
+          <SidebarItem id="meals" icon={Utensils} label="Meals" />
+          <SidebarItem id="expenses" icon={Receipt} label="Expenses" />
+          <SidebarItem id="deposits" icon={Wallet} label="Deposits" />
+
+          <div className="pt-6 pb-2">
+            <p className="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">System</p>
+          </div>
+          <SidebarItem id="reports" icon={FileText} label="Reports" />
+        </nav>
+
+        <div className="p-4">
+          {isAdmin && (
+            <div className="bg-gradient-to-br from-teal-600 to-teal-800 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden">
+              <div className="absolute -right-4 -top-4 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
+              <p className="text-xs text-teal-200 font-medium mb-1">Month End</p>
+              <h4 className="font-bold text-sm mb-3">Close {monthLabel} &<br />Generate PDF</h4>
+              <Button disabled={isClosingMonth} onClick={async () => {
+                if (confirm('Are you sure you want to close this month?')) {
+                  setIsClosingMonth(true);
+                  try {
+                    await api.closeMonth();
+                    await loadAll();
+                    showToast("Month Closed", "A new month has been started.");
+                  } catch (err) {
+                    showToast("Error", "Failed to close month.", "error");
+                  } finally {
+                    setIsClosingMonth(false);
+                  }
+                }
+              }} className="bg-white text-teal-800 text-xs font-bold w-full hover:bg-teal-50 transition-colors disabled:opacity-50">
+                {isClosingMonth ? <><Loader2 className="animate-spin mr-2" size={14} /> Closing...</> : 'Close Month'}
+              </Button>
+            </div>
+          )}
+        </div>
+      </aside>
+
+      <main className="flex-1 flex flex-col h-screen overflow-hidden z-10">
+        <header className="h-20 bg-white/20 backdrop-blur-md border-b border-white/30 px-8 flex items-center justify-between sticky top-0 shrink-0">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
+              <span className="text-slate-500 font-normal">Welcome{user ? ' back,' : ','}</span> {user ? 'Manager' : 'Viewer'} <span className="text-xl">👋</span>
+            </h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShareModalOpen(true)}
+                className="rounded-xl border-teal-200 text-teal-700 bg-teal-50/50 hover:bg-teal-100/50 hover:text-teal-800 flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Share2 size={16} /> Share System
+              </Button>
+              <span className="text-sm font-medium text-slate-600 bg-white/50 px-3 py-1 rounded-full">{user ? `${user.username} (${user.role})` : 'Viewer Mode'}</span>
+              {user && <Button variant="outline" size="sm" onClick={() => { localStorage.removeItem("access_token"); localStorage.removeItem("user"); window.location.reload(); }} className="rounded-xl border-slate-200 text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-colors cursor-pointer">Logout</Button>}
+            </div>
+          </div>
+        </header>
+
+        <div className="flex-1 overflow-auto p-4 sm:p-8 custom-scrollbar">
+          <div className="max-w-6xl mx-auto h-full flex flex-col">
+            {activeTab === 'dashboard' && DashboardView()}
+            {activeTab === 'members' && MembersView()}
+            {activeTab === 'meals' && MealsView()}
+            {activeTab === 'expenses' && ExpensesView()}
+            {activeTab === 'deposits' && DepositsView()}
+            {activeTab === 'reports' && ReportsView()}
+          </div>
         </div>
       </main>
 
-      {/* Modals */}
       <Dialog open={isExpenseModalOpen} onOpenChange={setExpenseModalOpen}>
-        <DialogContent className="sm:max-w-md bg-[var(--canvas)] border-[var(--hairline)] rounded-[12px] p-8 shadow-2xl">
+        <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-xl border-white rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-[24px] font-heading tracking-[-0.5px]">Add Expense</DialogTitle>
+            <DialogTitle>Add Daily Expense</DialogTitle>
           </DialogHeader>
           <form className="space-y-4 mt-4" onSubmit={async (e) => {
             e.preventDefault();
             const formData = new FormData(e.currentTarget);
-            setExpenseModalOpen(false);
+            setExpenseModalOpen(false); // Optimistically close modal
             try {
               await api.createExpense({
                 date: formData.get("date") as string,
@@ -657,47 +747,52 @@ export default function App() {
                 shopper_member_id: Number(formData.get("shopper_member_id")) || null
               });
               await loadAll();
-              showToast("Expense Added");
+              showToast("Expense Added", "The expense was recorded successfully.");
             } catch (err) {
+              console.error(err);
               showToast("Error", "Failed to record expense.", "error");
             }
           }}>
             <div>
-              <label className="block text-[14px] font-medium text-[var(--ink)] mb-2">Date</label>
-              <input name="date" type="date" defaultValue={today} className={inputClass} required />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+              <Input name="date" type="date" defaultValue={today} className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl" required />
             </div>
             <div>
-              <label className="block text-[14px] font-medium text-[var(--ink)] mb-2">Amount (৳)</label>
-              <input name="amount" type="number" min="0" step="0.01" placeholder="0.00" className={inputClass} required />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Amount (৳)</label>
+              <Input name="amount" type="number" min="0" step="0.01" placeholder="0.00" className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl" required />
             </div>
             <div>
-              <label className="block text-[14px] font-medium text-[var(--ink)] mb-2">Items Description</label>
-              <input name="description" type="text" placeholder="Rice, Chicken, etc." className={inputClass} required />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Items Description</label>
+              <Input name="description" type="text" placeholder="e.g., Rice, Chicken, Onion" className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl" required />
             </div>
             <div>
-              <label className="block text-[14px] font-medium text-[var(--ink)] mb-2">Purchased By</label>
-              <select name="shopper_member_id" className={inputClass}>
-                <option value="">Select Shopper...</option>
-                {activeMembers.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Purchased By</label>
+              <Select name="shopper_member_id">
+                <SelectTrigger className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl">
+                  <SelectValue placeholder="Select Shopper..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeMembers.map(m => <SelectItem key={m.id} value={m.id.toString()}>{m.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="pt-6 flex gap-3">
-              <button type="button" className={btnSecondary + " flex-1"} onClick={() => setExpenseModalOpen(false)}>Cancel</button>
-              <button type="submit" className={btnPrimary + " flex-1"}>Save</button>
+            <div className="pt-4 flex gap-3">
+              <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={() => setExpenseModalOpen(false)}>Cancel</Button>
+              <Button type="submit" className="flex-1 bg-teal-600 hover:bg-teal-700 text-white rounded-xl">Save Expense</Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isDepositModalOpen} onOpenChange={setDepositModalOpen}>
-        <DialogContent className="sm:max-w-md bg-[var(--canvas)] border-[var(--hairline)] rounded-[12px] p-8 shadow-2xl">
+        <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-xl border-white rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-[24px] font-heading tracking-[-0.5px]">Add Deposit</DialogTitle>
+            <DialogTitle>Add Member Deposit</DialogTitle>
           </DialogHeader>
           <form className="space-y-4 mt-4" onSubmit={async (e) => {
             e.preventDefault();
             const formData = new FormData(e.currentTarget);
-            setDepositModalOpen(false);
+            setDepositModalOpen(false); // Optimistically close
             try {
               await api.createDeposit({
                 date: formData.get("date") as string,
@@ -706,43 +801,48 @@ export default function App() {
                 note: ""
               });
               await loadAll();
-              showToast("Deposit Added");
+              showToast("Deposit Added", "Member deposit recorded successfully.");
             } catch (err) {
+              console.error(err);
               showToast("Error", "Failed to add deposit.", "error");
             }
           }}>
             <div>
-              <label className="block text-[14px] font-medium text-[var(--ink)] mb-2">Date</label>
-              <input name="date" type="date" defaultValue={today} className={inputClass} required />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+              <Input name="date" type="date" defaultValue={today} className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl" required />
             </div>
             <div>
-              <label className="block text-[14px] font-medium text-[var(--ink)] mb-2">Member</label>
-              <select name="member_id" className={inputClass} required>
-                <option value="">Select Member...</option>
-                {activeMembers.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Member</label>
+              <Select name="member_id" required>
+                <SelectTrigger className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl">
+                  <SelectValue placeholder="Select Member..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeMembers.map(m => <SelectItem key={m.id} value={m.id.toString()}>{m.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div>
-              <label className="block text-[14px] font-medium text-[var(--ink)] mb-2">Amount (৳)</label>
-              <input name="amount" type="number" min="0" step="0.01" placeholder="0.00" className={inputClass} required />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Amount (৳)</label>
+              <Input name="amount" type="number" min="0" step="0.01" placeholder="0.00" className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl" required />
             </div>
-            <div className="pt-6 flex gap-3">
-              <button type="button" className={btnSecondary + " flex-1"} onClick={() => setDepositModalOpen(false)}>Cancel</button>
-              <button type="submit" className={btnPrimary + " flex-1"}>Add</button>
+            <div className="pt-4 flex gap-3">
+              <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={() => setDepositModalOpen(false)}>Cancel</Button>
+              <Button type="submit" className="flex-1 bg-teal-600 hover:bg-teal-700 text-white rounded-xl">Add Deposit</Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isMemberModalOpen} onOpenChange={setMemberModalOpen}>
-        <DialogContent className="sm:max-w-md bg-[var(--canvas)] border-[var(--hairline)] rounded-[12px] p-8 shadow-2xl">
+        <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-xl border-white rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-[24px] font-heading tracking-[-0.5px]">Add Member</DialogTitle>
+            <DialogTitle>Add Member</DialogTitle>
           </DialogHeader>
           <form className="space-y-4 mt-4" onSubmit={async (e) => {
             e.preventDefault();
             const formData = new FormData(e.currentTarget);
-            setMemberModalOpen(false);
+            setMemberModalOpen(false); // Optimistically close
             try {
               await api.createMember({
                 name: formData.get("name") as string,
@@ -750,73 +850,123 @@ export default function App() {
                 entry_date: formData.get("entry_date") as string
               });
               await loadAll();
-              showToast("Member Added");
+              showToast("Member Added", "New mess member joined successfully.");
             } catch (err) {
+              console.error(err);
               showToast("Error", "Failed to add member.", "error");
             }
           }}>
             <div>
-              <label className="block text-[14px] font-medium text-[var(--ink)] mb-2">Name</label>
-              <input name="name" type="text" className={inputClass} required />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
+              <Input name="name" type="text" className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl" required />
             </div>
             <div>
-              <label className="block text-[14px] font-medium text-[var(--ink)] mb-2">Phone</label>
-              <input name="phone" type="text" className={inputClass} />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+              <Input name="phone" type="text" className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl" />
             </div>
             <div>
-              <label className="block text-[14px] font-medium text-[var(--ink)] mb-2">Entry Date</label>
-              <input name="entry_date" type="date" defaultValue={today} className={inputClass} required />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Entry Date</label>
+              <Input name="entry_date" type="date" defaultValue={today} className="bg-slate-50 focus-visible:ring-teal-500 rounded-xl" required />
             </div>
-            <div className="pt-6 flex gap-3">
-              <button type="button" className={btnSecondary + " flex-1"} onClick={() => setMemberModalOpen(false)}>Cancel</button>
-              <button type="submit" className={btnPrimary + " flex-1"}>Add</button>
+            <div className="pt-4 flex gap-3">
+              <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={() => setMemberModalOpen(false)}>Cancel</Button>
+              <Button type="submit" className="flex-1 bg-teal-600 hover:bg-teal-700 text-white rounded-xl">Add Member</Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isShareModalOpen} onOpenChange={setShareModalOpen}>
-        <DialogContent className="sm:max-w-md bg-[var(--canvas)] border-[var(--hairline)] rounded-[12px] p-8 shadow-2xl">
+        <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-xl border-white rounded-2xl p-6">
           <DialogHeader>
-            <DialogTitle className="text-[24px] font-heading tracking-[-0.5px] flex items-center gap-2">
-              <Share2 className="text-[var(--primary)]" size={24} /> Share
+            <DialogTitle className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <Share2 className="text-teal-600" size={20} />
+              Share MessSync
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-6 mt-6">
-            <p className="text-[14px] text-[var(--muted)]">Connect other members to this meal management system on your Local Network.</p>
-            <div>
+          
+          <div className="space-y-6 mt-4">
+            <p className="text-sm text-slate-500 leading-relaxed">
+              Connect other members to this meal management system. Make sure they are connected to the same <strong>Wi-Fi / Local Network (LAN)</strong>.
+            </p>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Access Link</label>
               <div className="flex gap-2">
-                <input type="text" value={shareUrl || "Loading..."} readOnly className={inputClass + " bg-[var(--surface-card)] select-all"} />
-                <button onClick={async () => {
-                  if (!shareUrl) return;
-                  await navigator.clipboard.writeText(shareUrl);
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                }} className={btnSecondary + " !px-4"}>
-                  {copied ? <Check size={16} className="text-[var(--success)]" /> : <Copy size={16} />}
-                </button>
+                <Input
+                  type="text"
+                  value={shareUrl || "Loading link..."}
+                  readOnly
+                  className="flex-1 bg-slate-50 border-slate-200 text-slate-700 font-medium rounded-xl select-all"
+                />
+                <Button
+                  onClick={async () => {
+                    if (!shareUrl) return;
+                    try {
+                      await navigator.clipboard.writeText(shareUrl);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    } catch (err) {
+                      console.error("Failed to copy link", err);
+                    }
+                  }}
+                  className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl px-4 flex items-center gap-1.5 shrink-0 transition-all cursor-pointer"
+                >
+                  {copied ? <Check size={16} /> : <Copy size={16} />}
+                  {copied ? "Copied!" : "Copy"}
+                </Button>
               </div>
             </div>
-            <div className="flex flex-col items-center p-6 bg-[var(--surface-card)] rounded-lg">
-              <div className="bg-[var(--canvas)] p-3 rounded-xl border border-[var(--hairline)]">
-                {shareUrl ? <canvas ref={qrCanvasRef} className="w-40 h-40" /> : <div className="w-40 h-40 flex items-center justify-center text-[var(--muted)] text-[13px]">Generating...</div>}
+
+            <div className="flex flex-col items-center justify-center bg-slate-50/50 rounded-2xl p-6 border border-slate-100 space-y-4">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Scan to Open on Mobile</span>
+              <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-center">
+                {shareUrl ? (
+                  <canvas ref={qrCanvasRef} className="w-48 h-48 rounded-lg" />
+                ) : (
+                  <div className="w-48 h-48 flex items-center justify-center text-slate-400 text-sm">
+                    Generating QR Code...
+                  </div>
+                )}
               </div>
-              <p className="text-[13px] text-[var(--muted)] mt-4">Scan QR to open instantly</p>
+              <p className="text-[11px] text-slate-400 text-center">
+                Scan this QR code with your phone camera to open the application instantly.
+              </p>
+            </div>
+            
+            <div className="pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full rounded-xl border-slate-200 hover:bg-slate-50 text-slate-600 transition-colors cursor-pointer"
+                onClick={() => setShareModalOpen(false)}
+              >
+                Close
+              </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Toast */}
+      {/* Toast Notification System */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
-          <div className="bg-[var(--surface-dark)] text-[var(--on-dark)] px-6 py-4 rounded-lg shadow-2xl flex items-center gap-4">
-            <div className={`w-2 h-2 rounded-full ${toastMessage.type === 'success' ? 'bg-[var(--success)]' : 'bg-[var(--error)]'}`}></div>
-            <div>
-              <p className="font-medium text-[14px]">{toastMessage.title}</p>
-              {toastMessage.message && <p className="text-[13px] text-[var(--on-dark-soft)]">{toastMessage.message}</p>}
+        <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
+          <div className={`rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border p-4 pr-12 min-w-[300px] flex gap-3 backdrop-blur-md ${
+            toastMessage.type === 'success' ? 'bg-white/90 border-teal-200 text-slate-800' : 'bg-white/90 border-red-200 text-slate-800'
+          }`}>
+            <div className={`mt-0.5 rounded-full p-1 h-fit shrink-0 ${toastMessage.type === 'success' ? 'bg-teal-100 text-teal-600' : 'bg-red-100 text-red-600'}`}>
+              {toastMessage.type === 'success' ? <Check size={14} /> : <X size={14} />}
             </div>
-            <button onClick={() => setToastMessage(null)} className="ml-4 text-[var(--on-dark-soft)] hover:text-[var(--on-dark)]"><X size={16}/></button>
+            <div>
+              <p className="font-semibold text-sm">{toastMessage.title}</p>
+              {toastMessage.message && <p className="text-xs text-slate-500 mt-0.5">{toastMessage.message}</p>}
+            </div>
+            <button 
+              onClick={() => setToastMessage(null)} 
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X size={16} />
+            </button>
           </div>
         </div>
       )}
