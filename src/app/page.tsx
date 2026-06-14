@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Home, Users, Utensils, Receipt, Wallet, Calendar,
   Search, Bell, Settings, Plus, Minus, ChevronRight,
-  MoreVertical, X, FileText, CalendarDays, Share2, Copy, Check, Loader2
+  MoreVertical, X, FileText, CalendarDays, Share2, Copy, Check, Loader2, Menu
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { format } from "date-fns";
@@ -31,6 +31,53 @@ export default function App() {
   });
   const isAdmin = user?.role === 'admin';
   const [activeTab, setActiveTab] = useState<'dashboard' | 'members' | 'meals' | 'expenses' | 'deposits' | 'schedule' | 'reports'>('dashboard');
+
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sidebar_collapsed') === 'true';
+    }
+    return false;
+  });
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('sidebar_collapsed', String(next));
+      return next;
+    });
+  };
+
+  const tabInfo = {
+    dashboard: {
+      title: "Dashboard Overview",
+      subtitle: "Real-time summary of meals, expenditures, and current rates."
+    },
+    members: {
+      title: "Mess Members",
+      subtitle: "Manage member enrollment, contact details, and status."
+    },
+    meals: {
+      title: "Daily Meal Grid",
+      subtitle: "Record lunch and dinner entries for members and guests."
+    },
+    expenses: {
+      title: "Bazar Expenses",
+      subtitle: "Track daily grocery costs and shopper logs."
+    },
+    deposits: {
+      title: "Member Deposits",
+      subtitle: "Monitor deposit logs and incoming payments."
+    },
+    schedule: {
+      title: "Bazar Schedule",
+      subtitle: "Schedule member shopping duty dates and notes."
+    },
+    reports: {
+      title: "Monthly Reports",
+      subtitle: "Analyze complete logs, balances, and perform rollover."
+    }
+  };
 
   // Real State from API
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -185,7 +232,19 @@ export default function App() {
   const DashboardView = () => (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Top Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <Card className="bg-gradient-to-br from-card/60 to-card/30 backdrop-blur-md border-border border rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-emerald-500/15 text-emerald-500 rounded-xl">
+                <Wallet size={24} />
+              </div>
+            </div>
+            <p className="text-muted-foreground text-sm font-medium mb-1">Total Deposits</p>
+            <h2 className="text-3xl font-bold text-foreground font-mono">৳{summary?.totals.total_deposit.toLocaleString() || 0}</h2>
+          </CardContent>
+        </Card>
+
         <Card className="bg-gradient-to-br from-card/60 to-card/30 backdrop-blur-md border-border border rounded-2xl">
           <CardContent className="p-6">
             <div className="flex justify-between items-start mb-4">
@@ -194,19 +253,7 @@ export default function App() {
               </div>
             </div>
             <p className="text-muted-foreground text-sm font-medium mb-1">Total Expense</p>
-            <h2 className="text-3xl font-bold text-foreground">৳{summary?.totals.total_expense.toLocaleString() || 0}</h2>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-card/60 to-card/30 backdrop-blur-md border-border border rounded-2xl">
-          <CardContent className="p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-chart-2/15 text-chart-2 rounded-xl">
-                <Utensils size={24} />
-              </div>
-            </div>
-            <p className="text-muted-foreground text-sm font-medium mb-1">Current Meal Rate</p>
-            <h2 className="text-3xl font-bold text-foreground">৳{summary?.totals.meal_rate.toFixed(2) || 0}</h2>
+            <h2 className="text-3xl font-bold text-foreground font-mono">৳{summary?.totals.total_expense.toLocaleString() || 0}</h2>
           </CardContent>
         </Card>
 
@@ -218,7 +265,19 @@ export default function App() {
               </div>
             </div>
             <p className="text-muted-foreground text-sm font-medium mb-1">Cash in Hand</p>
-            <h2 className="text-3xl font-bold text-foreground">৳{summary?.totals.cash_in_hand.toLocaleString() || 0}</h2>
+            <h2 className="text-3xl font-bold text-foreground font-mono">৳{summary?.totals.cash_in_hand.toLocaleString() || 0}</h2>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-card/60 to-card/30 backdrop-blur-md border-border border rounded-2xl">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-chart-2/15 text-chart-2 rounded-xl">
+                <Utensils size={24} />
+              </div>
+            </div>
+            <p className="text-muted-foreground text-sm font-medium mb-1">Current Meal Rate</p>
+            <h2 className="text-3xl font-bold text-foreground font-mono">৳{summary?.totals.meal_rate.toFixed(2) || 0}</h2>
           </CardContent>
         </Card>
 
@@ -226,7 +285,7 @@ export default function App() {
           <CardContent className="p-6 h-full flex flex-col justify-between">
             <div>
               <p className="text-white/80 text-sm font-medium mb-1">Total Meals Served</p>
-              <h2 className="text-4xl font-bold">{summary?.totals.total_meals.toFixed(1) || 0}</h2>
+              <h2 className="text-4xl font-bold font-mono">{summary?.totals.total_meals.toFixed(1) || 0}</h2>
             </div>
             <div className="mt-4">
               <button onClick={() => setActiveTab('meals')} className="text-sm bg-white/20 hover:bg-white/30 transition-colors py-2 px-4 rounded-lg w-full text-left flex justify-between items-center backdrop-blur-sm cursor-pointer">
@@ -267,7 +326,11 @@ export default function App() {
           </div>
           <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
             {(summary?.member_summaries || []).filter(m => m.is_active).sort((a, b) => a.balance - b.balance).map((member, i) => (
-              <div key={member.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-secondary/50 transition-colors border border-transparent hover:border-border/50">
+              <div 
+                key={member.id} 
+                onClick={() => setActiveTab('members')}
+                className="flex items-center justify-between p-3 rounded-xl hover:bg-secondary/50 transition-colors border border-transparent hover:border-border/50 cursor-pointer"
+              >
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm
                     ${i === 0 ? 'bg-destructive/15 text-destructive' : 'bg-secondary text-foreground/80'}
@@ -276,11 +339,11 @@ export default function App() {
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">{member.name}</p>
-                    <p className="text-xs text-muted-foreground">{member.total_meals} meals</p>
+                    <p className="text-xs text-muted-foreground font-mono">{member.total_meals} meals</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`font-bold ${member.balance >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                  <p className={`font-bold font-mono ${member.balance >= 0 ? 'text-primary' : 'text-destructive'}`}>
                     {member.balance >= 0 ? '+' : ''}৳{member.balance.toFixed(0)}
                   </p>
                   <p className="text-xs text-muted-foreground/80">Balance</p>
@@ -295,12 +358,8 @@ export default function App() {
 
   const MembersView = () => (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Mess Members</h2>
-          <p className="text-muted-foreground text-sm">Manage member details and view individual summaries.</p>
-        </div>
-        {isAdmin && <Button onClick={() => setMemberModalOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">
+      <div className="flex justify-end items-center mb-6 shrink-0">
+        {isAdmin && <Button onClick={() => setMemberModalOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl cursor-pointer">
           <Plus size={18} className="mr-2" /> Add Member
         </Button>}
       </div>
@@ -315,7 +374,7 @@ export default function App() {
               <th className="p-4 font-medium">Meals</th>
               <th className="p-4 font-medium">Total Cost</th>
               <th className="p-4 font-medium">Balance</th>
-              <th className="p-4 font-medium text-right">Actions</th>
+              {isAdmin && <th className="p-4 font-medium text-right">Actions</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -328,16 +387,16 @@ export default function App() {
                 <td className="p-4">
                   {member.is_active ? <Badge className="bg-primary/15 text-primary hover:bg-primary/25" variant="secondary">Active</Badge> : <Badge className="bg-secondary text-foreground/90 hover:bg-secondary/80" variant="secondary">Inactive</Badge>}
                 </td>
-                <td className="p-4 font-medium text-foreground/90">৳{member.total_deposit}</td>
-                <td className="p-4 text-foreground/80">{member.total_meals}</td>
-                <td className="p-4 text-foreground/80">৳{member.meal_cost.toFixed(2)}</td>
+                <td className="p-4 font-medium text-foreground/90 font-mono">৳{member.total_deposit}</td>
+                <td className="p-4 text-foreground/80 font-mono">{member.total_meals}</td>
+                <td className="p-4 text-foreground/80 font-mono">৳{member.meal_cost.toFixed(2)}</td>
                 <td className="p-4">
-                  <span className={`font-bold px-2 py-1 rounded-md ${member.balance >= 0 ? 'bg-chart-4/10 text-chart-4' : 'bg-destructive/10 text-red-700'}`}>
+                  <span className={`font-bold px-2 py-1 rounded-md font-mono ${member.balance >= 0 ? 'bg-chart-4/10 text-chart-4' : 'bg-destructive/10 text-destructive'}`}>
                     {member.balance >= 0 ? '+' : ''}৳{member.balance.toFixed(2)}
                   </span>
                 </td>
-                <td className="p-4 text-right">
-                  {isAdmin && (
+                {isAdmin && (
+                  <td className="p-4 text-right">
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -352,8 +411,8 @@ export default function App() {
                     >
                       {member.is_active ? 'Drop Member' : 'Restore Member'}
                     </Button>
-                  )}
-                </td>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -367,17 +426,11 @@ export default function App() {
 
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col flex-1 min-h-0">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Daily Meal Entry</h2>
-            <p className="text-muted-foreground text-sm">Record lunch and dinner counts.</p>
-          </div>
-          <div className="flex gap-2 items-center">
-            <Input type="date" value={mealDate} onChange={e => setMealDate(e.target.value)} className="w-auto bg-card/60" />
-            {isAdmin && <Button disabled={isSavingMeals} onClick={saveMealGrid} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition-all disabled:opacity-70">
-              {isSavingMeals ? <><Loader2 className="animate-spin mr-2" size={16} /> Saving...</> : 'Save'}
-            </Button>}
-          </div>
+        <div className="flex justify-end items-center gap-2 mb-6 shrink-0">
+          <Input type="date" value={mealDate} onChange={e => setMealDate(e.target.value)} className="w-auto bg-card/60" />
+          {isAdmin && <Button disabled={isSavingMeals} onClick={saveMealGrid} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition-all disabled:opacity-70 cursor-pointer">
+            {isSavingMeals ? <><Loader2 className="animate-spin mr-2" size={16} /> Saving...</> : 'Save'}
+          </Button>}
         </div>
 
         <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl flex-1 overflow-hidden flex flex-col">
@@ -455,98 +508,107 @@ export default function App() {
     );
   };
 
-  const ExpensesView = () => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Expenses & Bazar</h2>
-          <p className="text-muted-foreground text-sm">Track daily shopping costs.</p>
+  const ExpensesView = () => {
+    const totalExpensesSum = expenses.reduce((acc, exp) => acc + exp.amount, 0);
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex justify-end items-center mb-6 shrink-0">
+          {isAdmin && <Button onClick={() => setExpenseModalOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl cursor-pointer">
+            <Plus size={18} className="mr-2" /> Add Expense
+          </Button>}
         </div>
-        {isAdmin && <Button onClick={() => setExpenseModalOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">
-          <Plus size={18} className="mr-2" /> Add Expense
-        </Button>}
-      </div>
 
-      <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-border text-muted-foreground text-sm bg-secondary/50">
-              <th className="p-4 font-medium">Date</th>
-              <th className="p-4 font-medium">Description</th>
-              <th className="p-4 font-medium">Shopper</th>
-              <th className="p-4 font-medium text-right">Amount</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(exp => (
-              <tr key={exp.id} className="hover:bg-secondary/50 transition-colors">
-                <td className="p-4 text-foreground/80 whitespace-nowrap">{exp.date}</td>
-                <td className="p-4 text-foreground">{exp.description}</td>
-                <td className="p-4 text-foreground/80">
-                  <span className="inline-flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-secondary text-[10px] flex items-center justify-center font-bold text-foreground/80">
-                      {(exp.shopper_name || '?').substring(0, 2).toUpperCase()}
-                    </span>
-                    {exp.shopper_name || '-'}
-                  </span>
-                </td>
-                <td className="p-4 font-bold text-foreground text-right">৳{exp.amount.toLocaleString()}</td>
+        <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl overflow-hidden">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-border text-muted-foreground text-sm bg-secondary/50">
+                <th className="p-4 font-medium">Date</th>
+                <th className="p-4 font-medium">Description</th>
+                <th className="p-4 font-medium">Shopper</th>
+                <th className="p-4 font-medium text-right">Amount</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
-  const DepositsView = () => (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Member Deposits</h2>
-          <p className="text-muted-foreground text-sm">Money collected for the month.</p>
-        </div>
-        {isAdmin && <Button onClick={() => setDepositModalOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">
-          <Plus size={18} className="mr-2" /> Add Deposit
-        </Button>}
-      </div>
-
-      <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-border text-muted-foreground text-sm bg-secondary/50">
-              <th className="p-4 font-medium">Date</th>
-              <th className="p-4 font-medium">Member</th>
-              <th className="p-4 font-medium text-right">Amount</th>
-              <th className="p-4 font-medium text-center">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {deposits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(dep => {
-              return (
-                <tr key={dep.id} className="hover:bg-secondary/50 transition-colors">
-                  <td className="p-4 text-foreground/80 whitespace-nowrap">{dep.date}</td>
-                  <td className="p-4 font-medium text-foreground">{dep.member_name || 'Unknown'}</td>
-                  <td className="p-4 font-bold text-primary/90 text-right">৳{dep.amount.toLocaleString()}</td>
-                  <td className="p-4 text-center">
-                    <Badge className="bg-chart-4/15 text-chart-4 hover:bg-green-200" variant="secondary">Received</Badge>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(exp => (
+                <tr key={exp.id} className="hover:bg-secondary/50 transition-colors">
+                  <td className="p-4 text-foreground/80 whitespace-nowrap">{exp.date}</td>
+                  <td className="p-4 text-foreground">{exp.description}</td>
+                  <td className="p-4 text-foreground/80">
+                    <span className="inline-flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-secondary text-[10px] flex items-center justify-center font-bold text-foreground/80">
+                        {(exp.shopper_name || '?').substring(0, 2).toUpperCase()}
+                      </span>
+                      {exp.shopper_name || '-'}
+                    </span>
                   </td>
+                  <td className="p-4 font-bold text-foreground text-right font-mono">৳{exp.amount.toLocaleString()}</td>
                 </tr>
-              )
-            })}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t border-border bg-secondary/30 font-bold text-foreground">
+                <td className="p-4">Total</td>
+                <td className="p-4" colSpan={2}></td>
+                <td className="p-4 text-right font-mono">৳{totalExpensesSum.toLocaleString()}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  const DepositsView = () => {
+    const totalDepositsSum = deposits.reduce((acc, dep) => acc + dep.amount, 0);
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex justify-end items-center mb-6 shrink-0">
+          {isAdmin && <Button onClick={() => setDepositModalOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl cursor-pointer">
+            <Plus size={18} className="mr-2" /> Add Deposit
+          </Button>}
+        </div>
+
+        <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl overflow-hidden">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-border text-muted-foreground text-sm bg-secondary/50">
+                <th className="p-4 font-medium">Date</th>
+                <th className="p-4 font-medium">Member</th>
+                <th className="p-4 font-medium text-right">Amount</th>
+                <th className="p-4 font-medium text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {deposits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(dep => {
+                return (
+                  <tr key={dep.id} className="hover:bg-secondary/50 transition-colors">
+                    <td className="p-4 text-foreground/80 whitespace-nowrap">{dep.date}</td>
+                    <td className="p-4 font-medium text-foreground">{dep.member_name || 'Unknown'}</td>
+                    <td className="p-4 font-bold text-primary/90 text-right font-mono">৳{dep.amount.toLocaleString()}</td>
+                    <td className="p-4 text-center">
+                      <Badge className="bg-chart-4/15 text-chart-4 hover:bg-chart-4/25" variant="secondary">Received</Badge>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+            <tfoot>
+              <tr className="border-t border-border bg-secondary/30 font-bold text-foreground">
+                <td className="p-4">Total</td>
+                <td className="p-4"></td>
+                <td className="p-4 text-right font-mono">৳{totalDepositsSum.toLocaleString()}</td>
+                <td className="p-4"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    );
+  };
 
   const ReportsView = () => (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col h-full">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Monthly Report</h2>
-          <p className="text-muted-foreground text-sm">Comprehensive summary of all expenses, deposits, and balances.</p>
-        </div>
+      <div className="flex justify-end items-center mb-6 shrink-0">
         <Button onClick={async () => {
           try {
             const res = await fetch('/api/export/summary.csv');
@@ -608,12 +670,12 @@ export default function App() {
                     {member.name}
                     {!member.is_active && <Badge className="ml-2 bg-secondary text-muted-foreground text-[10px]" variant="secondary">Inactive</Badge>}
                   </td>
-                  <td className="p-4 text-foreground/80 text-right">৳{member.opening_balance?.toFixed(2) || 0}</td>
-                  <td className="p-4 text-primary/90 font-medium text-right">৳{member.total_deposit?.toLocaleString() || 0}</td>
-                  <td className="p-4 text-foreground/80 text-center">{member.total_meals || 0}</td>
-                  <td className="p-4 text-foreground/80 text-right">৳{member.meal_cost?.toFixed(2) || 0}</td>
+                  <td className="p-4 text-foreground/80 text-right font-mono">৳{member.opening_balance?.toFixed(2) || 0}</td>
+                  <td className="p-4 text-primary/90 font-medium text-right font-mono">৳{member.total_deposit?.toLocaleString() || 0}</td>
+                  <td className="p-4 text-foreground/80 text-center font-mono">{member.total_meals || 0}</td>
+                  <td className="p-4 text-foreground/80 text-right font-mono">৳{member.meal_cost?.toFixed(2) || 0}</td>
                   <td className="p-4 text-right">
-                    <span className={`font-bold px-2 py-1 rounded-md ${member.balance >= 0 ? 'bg-chart-4/10 text-chart-4' : 'bg-destructive/10 text-red-700'}`}>
+                    <span className={`font-bold px-2 py-1 rounded-md font-mono ${member.balance >= 0 ? 'bg-chart-4/10 text-chart-4' : 'bg-destructive/10 text-destructive'}`}>
                       {member.balance >= 0 ? '+' : ''}৳{member.balance?.toFixed(2) || 0}
                     </span>
                   </td>
@@ -630,7 +692,10 @@ export default function App() {
     const active = activeTab === id;
     return (
       <button
-        onClick={() => setActiveTab(id)}
+        onClick={() => {
+          setActiveTab(id);
+          setIsMobileOpen(false);
+        }}
         className={`transition-all duration-300 ease-in-out font-medium rounded-xl flex items-center gap-3 px-4 py-3 w-full cursor-pointer
           ${active ? 'bg-primary text-primary-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`}
       >
@@ -640,19 +705,36 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans flex overflow-hidden selection:bg-teal-200 relative w-full">
-      <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[100px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-chart-2/5 blur-[120px]"></div>
-        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-chart-3/5 blur-[90px]"></div>
-      </div>
+    <div className="min-h-screen bg-background text-foreground font-sans flex overflow-hidden selection:bg-primary selection:text-primary-foreground relative w-full">
 
-      <aside className="w-64 bg-sidebar/40 backdrop-blur-2xl border-r border-sidebar-border/50 flex-col hidden md:flex z-20">
-        <div className="p-6 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl">
-            M
+
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden cursor-pointer"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 md:static flex flex-col bg-sidebar/95 md:bg-sidebar/40 backdrop-blur-2xl border-r border-sidebar-border/50 transition-all duration-300 ease-in-out overflow-hidden
+        ${isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'}
+        ${isSidebarCollapsed ? 'md:w-0 md:opacity-0 md:-translate-x-full md:border-r-0' : 'md:w-64 md:opacity-100 md:translate-x-0'}
+      `}>
+        <div className="p-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl">
+              M
+            </div>
+            <span className="text-xl font-extrabold tracking-tight text-foreground">Mess<span className="text-primary">Sync</span></span>
           </div>
-          <span className="text-xl font-extrabold tracking-tight text-foreground">Mess<span className="text-primary">Sync</span></span>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsMobileOpen(false)}
+            className="md:hidden rounded-xl hover:bg-secondary/80 text-muted-foreground hover:text-foreground cursor-pointer"
+          >
+            <X size={20} />
+          </Button>
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
@@ -697,23 +779,44 @@ export default function App() {
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden z-10">
         <header className="h-20 bg-card/20 backdrop-blur-md border-b border-border/30 px-8 flex items-center justify-between sticky top-0 shrink-0">
-          <div>
-            <h1 className="text-xl font-semibold text-foreground flex items-center gap-2">
-              <span className="text-muted-foreground font-normal">Welcome{user ? ' back,' : ','}</span> {user ? 'Manager' : 'Viewer'} <span className="text-xl">👋</span>
-            </h1>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                  setIsMobileOpen(!isMobileOpen);
+                } else {
+                  toggleSidebar();
+                }
+              }}
+              className="rounded-xl hover:bg-secondary/80 text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
+              title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            >
+              <Menu size={20} />
+            </Button>
+            
+            <div className="flex flex-col">
+              <h1 className="text-lg font-bold text-foreground leading-tight">
+                {tabInfo[activeTab]?.title}
+              </h1>
+              <p className="text-xs text-muted-foreground hidden sm:block">
+                {tabInfo[activeTab]?.subtitle}
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
-              <Button
+               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShareModalOpen(true)}
-                className="rounded-xl border-primary/20 text-primary/90 bg-primary/20 hover:bg-primary/20 hover:text-primary-foreground flex items-center gap-1.5 transition-all cursor-pointer"
+                className="rounded-xl border-primary/20 text-primary bg-primary/10 hover:bg-primary hover:text-primary-foreground flex items-center gap-1.5 transition-all cursor-pointer animate-in fade-in"
               >
                 <Share2 size={16} /> Share System
               </Button>
               <span className="text-sm font-medium text-foreground/80 bg-card/50 px-3 py-1 rounded-full">{user ? `${user.username} (${user.role})` : 'Viewer Mode'}</span>
-              {user && <Button variant="outline" size="sm" onClick={() => { localStorage.removeItem("access_token"); localStorage.removeItem("user"); window.location.reload(); }} className="rounded-xl border-border text-foreground/80 hover:bg-destructive/10 hover:text-red-600 hover:border-red-100 transition-colors cursor-pointer">Logout</Button>}
+              {user && <Button variant="outline" size="sm" onClick={() => { localStorage.removeItem("access_token"); localStorage.removeItem("user"); window.location.reload(); }} className="rounded-xl border-border text-foreground/80 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors cursor-pointer">Logout</Button>}
             </div>
           </div>
         </header>
