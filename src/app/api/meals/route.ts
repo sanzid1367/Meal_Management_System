@@ -72,33 +72,42 @@ export async function PUT(request: Request) {
       return NextResponse.json({ detail: "Invalid payload. Expected an entries array." }, { status: 400 });
     }
 
+    // Validate required fields and increments
+    for (const entry of entries) {
+      if (!entry.member_id || !entry.date || !entry.meal_type) {
+        throw new Error("Missing required fields in meal entry");
+      }
+      const count = Number(entry.count || 0);
+      const guestCount = Number(entry.guest_count || 0);
+      if (Math.round(count * 2) !== count * 2) {
+        throw new Error("Count must use 0.5 increments");
+      }
+      if (Math.round(guestCount * 2) !== guestCount * 2) {
+        throw new Error("Guest count must use 0.5 increments");
+      }
+    }
+
+    // Validate members outside the loop in a single batch query
+    const memberIds = Array.from(new Set(entries.map(entry => Number(entry.member_id))));
+    if (memberIds.length > 0) {
+      const existingMembers = await sql`
+        SELECT id FROM members WHERE id IN ${sql(memberIds)}
+      `;
+      const existingIds = new Set(existingMembers.map(m => Number(m.id)));
+      for (const id of memberIds) {
+        if (!existingIds.has(id)) {
+          throw new Error(`Member with ID ${id} not found`);
+        }
+      }
+    }
+
     // Process in a transaction
     await sql.begin(async (sql) => {
-      for (const entry of entries) {
-        if (!entry.member_id || !entry.date || !entry.meal_type) {
-          throw new Error("Missing required fields in meal entry");
-        }
-        
-        // Validate member
-        const memberExists = await validateMember(entry.member_id);
-        if (!memberExists) {
-          throw new Error(`Member with ID ${entry.member_id} not found`);
-        }
-
-        // Validate increments of 0.5
+      const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+      const insertPromises = entries.map((entry) => {
         const count = Number(entry.count || 0);
         const guestCount = Number(entry.guest_count || 0);
-        
-        if (Math.round(count * 2) !== count * 2) {
-          throw new Error("Count must use 0.5 increments");
-        }
-        if (Math.round(guestCount * 2) !== guestCount * 2) {
-          throw new Error("Guest count must use 0.5 increments");
-        }
-
-        const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
-
-        await sql`
+        return sql`
           INSERT INTO meal_entries (month_id, member_id, date, meal_type, count, guest_count, updated_at)
           VALUES (${month.id}, ${entry.member_id}, ${entry.date}, ${entry.meal_type}, ${count}, ${guestCount}, ${now})
           ON CONFLICT (month_id, member_id, date, meal_type)
@@ -106,7 +115,8 @@ export async function PUT(request: Request) {
                         guest_count = EXCLUDED.guest_count,
                         updated_at = EXCLUDED.updated_at
         `;
-      }
+      });
+      await Promise.all(insertPromises);
     });
 
     return NextResponse.json({ updated: entries.length });

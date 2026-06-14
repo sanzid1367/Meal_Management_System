@@ -6,9 +6,9 @@ import {
   Search, Bell, Settings, Plus, Minus, ChevronRight,
   MoreVertical, X, FileText, CalendarDays, Share2, Copy, Check, Loader2, Menu
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { format } from "date-fns";
 import QRCode from 'qrcode';
+import dynamic from 'next/dynamic';
 
 import { api } from "../lib/api";
 import type { Deposit, Expense, MealEntry, Member, MemberSummary, ScheduleEntry, Summary } from "../types";
@@ -19,7 +19,41 @@ import { Badge } from "../components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+
+const ExpenseChart = dynamic(() => import('../components/ExpenseChart'), { ssr: false });
+
 const today = format(new Date(), "yyyy-MM-dd");
+
+const tabInfo = {
+  dashboard: {
+    title: "Dashboard Overview",
+    subtitle: "Real-time summary of meals, expenditures, and current rates."
+  },
+  members: {
+    title: "Mess Members",
+    subtitle: "Manage member enrollment, contact details, and status."
+  },
+  meals: {
+    title: "Daily Meal Grid",
+    subtitle: "Record lunch and dinner entries for members and guests."
+  },
+  expenses: {
+    title: "Bazar Expenses",
+    subtitle: "Track daily grocery costs and shopper logs."
+  },
+  deposits: {
+    title: "Member Deposits",
+    subtitle: "Monitor deposit logs and incoming payments."
+  },
+  schedule: {
+    title: "Bazar Schedule",
+    subtitle: "Schedule member shopping duty dates and notes."
+  },
+  reports: {
+    title: "Monthly Reports",
+    subtitle: "Analyze complete logs, balances, and perform rollover."
+  }
+} as const;
 
 export default function App() {
   const [user, setUser] = useState(() => {
@@ -46,37 +80,6 @@ export default function App() {
       localStorage.setItem('sidebar_collapsed', String(next));
       return next;
     });
-  };
-
-  const tabInfo = {
-    dashboard: {
-      title: "Dashboard Overview",
-      subtitle: "Real-time summary of meals, expenditures, and current rates."
-    },
-    members: {
-      title: "Mess Members",
-      subtitle: "Manage member enrollment, contact details, and status."
-    },
-    meals: {
-      title: "Daily Meal Grid",
-      subtitle: "Record lunch and dinner entries for members and guests."
-    },
-    expenses: {
-      title: "Bazar Expenses",
-      subtitle: "Track daily grocery costs and shopper logs."
-    },
-    deposits: {
-      title: "Member Deposits",
-      subtitle: "Monitor deposit logs and incoming payments."
-    },
-    schedule: {
-      title: "Bazar Schedule",
-      subtitle: "Schedule member shopping duty dates and notes."
-    },
-    reports: {
-      title: "Monthly Reports",
-      subtitle: "Analyze complete logs, balances, and perform rollover."
-    }
   };
 
   // Real State from API
@@ -304,17 +307,7 @@ export default function App() {
             <button onClick={() => setActiveTab('expenses')} className="text-primary text-sm font-medium hover:underline cursor-pointer">View Ledger</button>
           </div>
           <div className="flex-1 min-h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={expenseChartData.length ? expenseChartData : [{ day: '1', cost: 0 }]}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} dx={-10} />
-                <RechartsTooltip
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                />
-                <Line type="monotone" dataKey="cost" stroke="var(--primary)" strokeWidth={4} dot={{ r: 6, fill: 'var(--primary)', strokeWidth: 2, stroke: 'var(--card)' }} activeDot={{ r: 8 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <ExpenseChart data={expenseChartData} />
           </div>
         </Card>
 
@@ -467,33 +460,45 @@ export default function App() {
                         {dayNum} <span className="text-xs text-muted-foreground/80 font-normal uppercase">{format(new Date(date), "MMM")}</span>
                       </td>
                       {activeMembers.map(member => {
-                        const renderInput = (type: 'lunch' | 'dinner', val: number) => {
-                          if (!isSelected || !isAdmin) {
-                            return (
-                              <td className={`p-2 border-b border-r border-border/50 ${val > 0 ? 'bg-secondary/50 text-foreground/90 font-medium' : 'text-muted-foreground/80'} text-base`}>
-                                {val > 0 ? val : '-'}
-                              </td>
-                            );
-                          }
-                          return (
-                            <td className={`p-2 border-b border-r border-border/50 ${val > 0 ? 'bg-primary/20' : ''}`}>
-                              <input
-                                type="number"
-                                step="0.5"
-                                min="0"
-                                value={val === 0 ? '' : val}
-                                onChange={(e) => setMealValue(date, member.id, type, 'count', Number(e.target.value))}
-                                className="w-full min-w-[60px] h-8 text-center bg-transparent text-base focus:outline-none focus:bg-card focus:ring-2 focus:ring-primary rounded px-1 py-1 text-foreground font-medium placeholder-muted-foreground/50"
-                                placeholder="-"
-                              />
-                            </td>
-                          );
-                        }
+                        const lunchVal = mealValue(date, member.id, 'lunch', 'count');
+                        const dinnerVal = mealValue(date, member.id, 'dinner', 'count');
 
                         return (
                           <React.Fragment key={`${date}-${member.id}`}>
-                            {renderInput('lunch', mealValue(date, member.id, 'lunch', 'count'))}
-                            {renderInput('dinner', mealValue(date, member.id, 'dinner', 'count'))}
+                            {!isSelected || !isAdmin ? (
+                              <td className={`p-2 border-b border-r border-border/50 ${lunchVal > 0 ? 'bg-secondary/50 text-foreground/90 font-medium' : 'text-muted-foreground/80'} text-base`}>
+                                {lunchVal > 0 ? lunchVal : '-'}
+                              </td>
+                            ) : (
+                              <td className={`p-2 border-b border-r border-border/50 ${lunchVal > 0 ? 'bg-primary/20' : ''}`}>
+                                <input
+                                  type="number"
+                                  step="0.5"
+                                  min="0"
+                                  value={lunchVal === 0 ? '' : lunchVal}
+                                  onChange={(e) => setMealValue(date, member.id, 'lunch', 'count', Number(e.target.value))}
+                                  className="w-full min-w-[60px] h-8 text-center bg-transparent text-base focus:outline-none focus:bg-card focus:ring-2 focus:ring-primary rounded px-1 py-1 text-foreground font-medium placeholder-muted-foreground/50"
+                                  placeholder="-"
+                                />
+                              </td>
+                            )}
+                            {!isSelected || !isAdmin ? (
+                              <td className={`p-2 border-b border-r border-border/50 ${dinnerVal > 0 ? 'bg-secondary/50 text-foreground/90 font-medium' : 'text-muted-foreground/80'} text-base`}>
+                                {dinnerVal > 0 ? dinnerVal : '-'}
+                              </td>
+                            ) : (
+                              <td className={`p-2 border-b border-r border-border/50 ${dinnerVal > 0 ? 'bg-primary/20' : ''}`}>
+                                <input
+                                  type="number"
+                                  step="0.5"
+                                  min="0"
+                                  value={dinnerVal === 0 ? '' : dinnerVal}
+                                  onChange={(e) => setMealValue(date, member.id, 'dinner', 'count', Number(e.target.value))}
+                                  className="w-full min-w-[60px] h-8 text-center bg-transparent text-base focus:outline-none focus:bg-card focus:ring-2 focus:ring-primary rounded px-1 py-1 text-foreground font-medium placeholder-muted-foreground/50"
+                                  placeholder="-"
+                                />
+                              </td>
+                            )}
                           </React.Fragment>
                         );
                       })}
@@ -664,23 +669,31 @@ export default function App() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {(summary?.member_summaries || []).filter(m => m.is_active || m.balance !== 0).map(member => (
-                <tr key={member.id} className="hover:bg-secondary/50 transition-colors">
-                  <td className="p-4 font-semibold text-foreground">
-                    {member.name}
-                    {!member.is_active && <Badge className="ml-2 bg-secondary text-muted-foreground text-[10px]" variant="secondary">Inactive</Badge>}
-                  </td>
-                  <td className="p-4 text-foreground/80 text-right font-mono">৳{member.opening_balance?.toFixed(2) || 0}</td>
-                  <td className="p-4 text-primary/90 font-medium text-right font-mono">৳{member.total_deposit?.toLocaleString() || 0}</td>
-                  <td className="p-4 text-foreground/80 text-center font-mono">{member.total_meals || 0}</td>
-                  <td className="p-4 text-foreground/80 text-right font-mono">৳{member.meal_cost?.toFixed(2) || 0}</td>
-                  <td className="p-4 text-right">
-                    <span className={`font-bold px-2 py-1 rounded-md font-mono ${member.balance >= 0 ? 'bg-chart-4/10 text-chart-4' : 'bg-destructive/10 text-destructive'}`}>
-                      {member.balance >= 0 ? '+' : ''}৳{member.balance?.toFixed(2) || 0}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {(() => {
+                const rows: React.ReactNode[] = [];
+                for (const member of (summary?.member_summaries || [])) {
+                  if (member.is_active || member.balance !== 0) {
+                    rows.push(
+                      <tr key={member.id} className="hover:bg-secondary/50 transition-colors">
+                        <td className="p-4 font-semibold text-foreground">
+                          {member.name}
+                          {!member.is_active && <Badge className="ml-2 bg-secondary text-muted-foreground text-[10px]" variant="secondary">Inactive</Badge>}
+                        </td>
+                        <td className="p-4 text-foreground/80 text-right font-mono">৳{member.opening_balance?.toFixed(2) || 0}</td>
+                        <td className="p-4 text-primary/90 font-medium text-right font-mono">৳{member.total_deposit?.toLocaleString() || 0}</td>
+                        <td className="p-4 text-foreground/80 text-center font-mono">{member.total_meals || 0}</td>
+                        <td className="p-4 text-foreground/80 text-right font-mono">৳{member.meal_cost?.toFixed(2) || 0}</td>
+                        <td className="p-4 text-right">
+                          <span className={`font-bold px-2 py-1 rounded-md font-mono ${member.balance >= 0 ? 'bg-chart-4/10 text-chart-4' : 'bg-destructive/10 text-destructive'}`}>
+                            {member.balance >= 0 ? '+' : ''}৳{member.balance?.toFixed(2) || 0}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  }
+                }
+                return rows;
+              })()}
             </tbody>
           </table>
         </div>
@@ -838,9 +851,7 @@ export default function App() {
           <DialogHeader>
             <DialogTitle>Add Daily Expense</DialogTitle>
           </DialogHeader>
-          <form className="space-y-4 mt-4" onSubmit={async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
+          <form className="space-y-4 mt-4" action={async (formData: FormData) => {
             setExpenseModalOpen(false); // Optimistically close modal
             try {
               await api.createExpense({
@@ -892,9 +903,7 @@ export default function App() {
           <DialogHeader>
             <DialogTitle>Add Member Deposit</DialogTitle>
           </DialogHeader>
-          <form className="space-y-4 mt-4" onSubmit={async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
+          <form className="space-y-4 mt-4" action={async (formData: FormData) => {
             setDepositModalOpen(false); // Optimistically close
             try {
               await api.createDeposit({
@@ -942,9 +951,7 @@ export default function App() {
           <DialogHeader>
             <DialogTitle>Add Member</DialogTitle>
           </DialogHeader>
-          <form className="space-y-4 mt-4" onSubmit={async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
+          <form className="space-y-4 mt-4" action={async (formData: FormData) => {
             setMemberModalOpen(false); // Optimistically close
             try {
               await api.createMember({

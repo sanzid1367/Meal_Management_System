@@ -81,18 +81,20 @@ export async function buildSummary(monthId: number) {
   }
 
   // 3. Fetch Sums
-  const expenseResult = await sql`
-    SELECT COALESCE(SUM(amount), 0) AS value FROM expenses WHERE month_id = ${monthId}
-  `;
-  const depositResult = await sql`
-    SELECT COALESCE(SUM(amount), 0) AS value FROM deposits WHERE month_id = ${monthId}
-  `;
-  const openingResult = await sql`
-    SELECT COALESCE(SUM(amount), 0) AS value FROM opening_balances WHERE month_id = ${monthId}
-  `;
-  const mealsResult = await sql`
-    SELECT COALESCE(SUM(count + guest_count), 0) AS value FROM meal_entries WHERE month_id = ${monthId}
-  `;
+  const [expenseResult, depositResult, openingResult, mealsResult] = await Promise.all([
+    sql`
+      SELECT COALESCE(SUM(amount), 0) AS value FROM expenses WHERE month_id = ${monthId}
+    `,
+    sql`
+      SELECT COALESCE(SUM(amount), 0) AS value FROM deposits WHERE month_id = ${monthId}
+    `,
+    sql`
+      SELECT COALESCE(SUM(amount), 0) AS value FROM opening_balances WHERE month_id = ${monthId}
+    `,
+    sql`
+      SELECT COALESCE(SUM(count + guest_count), 0) AS value FROM meal_entries WHERE month_id = ${monthId}
+    `
+  ]);
 
   const total_expense = Number(expenseResult[0].value || 0);
   const total_deposit = Number(depositResult[0].value || 0);

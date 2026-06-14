@@ -19,7 +19,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const text = await response.text();
     if (response.status === 401 || response.status === 403) {
       if (path !== '/api/auth/me' && path !== '/api/auth/token') {
-        if (localStorage.getItem("access_token")) {
+        if (token) {
           localStorage.removeItem("access_token");
           localStorage.removeItem("user");
           window.location.reload();

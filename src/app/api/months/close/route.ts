@@ -59,15 +59,16 @@ export async function POST(request: Request) {
       `;
 
       // 5. Roll over opening balances
-      for (const member of summary.member_summaries) {
+      const rolloverPromises = summary.member_summaries.map((member: any) => {
         const balance = Math.round(member.balance * 100) / 100;
-        await sql`
+        return sql`
           INSERT INTO opening_balances (member_id, month_id, amount, note, created_at)
           VALUES (${member.id}, ${nextMonth.id}, ${balance}, ${`Rollover from ${month.name}`}, ${now})
           ON CONFLICT (member_id, month_id)
           DO UPDATE SET amount = EXCLUDED.amount, note = EXCLUDED.note
         `;
-      }
+      });
+      await Promise.all(rolloverPromises);
 
       newMonthResult = nextMonth;
     });
