@@ -4,7 +4,8 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Home, Users, Utensils, Receipt, Wallet, Calendar,
   Search, Bell, Settings, Plus, Minus, ChevronRight,
-  MoreVertical, X, FileText, CalendarDays, Share2, Copy, Check, Loader2, Menu
+  MoreVertical, X, FileText, CalendarDays, Share2, Copy, Check, Loader2, Menu,
+  Pencil, Trash2
 } from 'lucide-react';
 import { format } from "date-fns";
 import QRCode from 'qrcode';
@@ -95,6 +96,8 @@ export default function App() {
   // Modals
   const [isExpenseModalOpen, setExpenseModalOpen] = useState(false);
   const [isDepositModalOpen, setDepositModalOpen] = useState(false);
+  const [isEditDepositModalOpen, setEditDepositModalOpen] = useState(false);
+  const [editingDeposit, setEditingDeposit] = useState<Deposit | null>(null);
   const [isMemberModalOpen, setMemberModalOpen] = useState(false);
   const [isShareModalOpen, setShareModalOpen] = useState(false);
   const [shareData, setShareData] = useState<{ local_ip: string; port: number; share_url: string } | null>(null);
@@ -581,6 +584,7 @@ export default function App() {
                 <th className="p-4 font-medium">Member</th>
                 <th className="p-4 font-medium text-right">Amount</th>
                 <th className="p-4 font-medium text-center">Status</th>
+                {isAdmin && <th className="p-4 font-medium text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -593,6 +597,42 @@ export default function App() {
                     <td className="p-4 text-center">
                       <Badge className="bg-chart-4/15 text-chart-4 hover:bg-chart-4/25" variant="secondary">Received</Badge>
                     </td>
+                    {isAdmin && (
+                      <td className="p-4 text-right whitespace-nowrap">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer"
+                            onClick={() => {
+                              setEditingDeposit(dep);
+                              setEditDepositModalOpen(true);
+                            }}
+                          >
+                            <Pencil size={15} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-lg cursor-pointer"
+                            onClick={async () => {
+                              if (confirm(`Are you sure you want to delete this deposit of ৳${dep.amount} for ${dep.member_name}?`)) {
+                                try {
+                                  await api.deleteDeposit(dep.id);
+                                  await loadAll();
+                                  showToast("Deposit Deleted", "Member deposit was deleted successfully.");
+                                } catch (err) {
+                                  console.error(err);
+                                  showToast("Error", "Failed to delete deposit.", "error");
+                                }
+                              }
+                            }}
+                          >
+                            <Trash2 size={15} />
+                          </Button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 )
               })}
@@ -603,6 +643,7 @@ export default function App() {
                 <td className="p-4"></td>
                 <td className="p-4 text-right font-mono">৳{totalDepositsSum.toLocaleString()}</td>
                 <td className="p-4"></td>
+                {isAdmin && <td className="p-4"></td>}
               </tr>
             </tfoot>
           </table>
@@ -943,6 +984,60 @@ export default function App() {
               <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">Add Deposit</Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditDepositModalOpen} onOpenChange={setEditDepositModalOpen}>
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Member Deposit</DialogTitle>
+          </DialogHeader>
+          {editingDeposit && (
+            <form className="space-y-4 mt-4" action={async (formData: FormData) => {
+              setEditDepositModalOpen(false); // Optimistically close
+              try {
+                await api.updateDeposit(editingDeposit.id, {
+                  date: formData.get("date") as string,
+                  amount: Number(formData.get("amount")),
+                  member_id: Number(formData.get("member_id")),
+                  note: (formData.get("note") as string) || ""
+                });
+                await loadAll();
+                showToast("Deposit Updated", "Member deposit updated successfully.");
+              } catch (err) {
+                console.error(err);
+                showToast("Error", "Failed to update deposit.", "error");
+              }
+            }}>
+              <div>
+                <label className="block text-sm font-medium text-foreground/90 mb-1">Date</label>
+                <Input name="date" type="date" defaultValue={editingDeposit.date} className="bg-secondary focus-visible:ring-primary rounded-xl" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground/90 mb-1">Member</label>
+                <Select name="member_id" defaultValue={editingDeposit.member_id.toString()} required>
+                  <SelectTrigger className="bg-secondary focus-visible:ring-primary rounded-xl">
+                    <SelectValue placeholder="Select Member..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeMembers.map(m => <SelectItem key={m.id} value={m.id.toString()}>{m.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground/90 mb-1">Amount (৳)</label>
+                <Input name="amount" type="number" min="0" step="0.01" defaultValue={editingDeposit.amount} className="bg-secondary focus-visible:ring-primary rounded-xl" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground/90 mb-1">Note (Optional)</label>
+                <Input name="note" type="text" defaultValue={editingDeposit.note || ""} placeholder="e.g., Cash, bKash" className="bg-secondary focus-visible:ring-primary rounded-xl" />
+              </div>
+              <div className="pt-4 flex gap-3">
+                <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={() => setEditDepositModalOpen(false)}>Cancel</Button>
+                <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">Save Changes</Button>
+              </div>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
 

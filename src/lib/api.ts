@@ -43,6 +43,8 @@ export const api = {
     request<Deposit>("/api/deposits", { method: "POST", body: JSON.stringify(data) }),
   updateDeposit: (id: number, data: Partial<Deposit>) =>
     request<Deposit>(`/api/deposits/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteDeposit: (id: number) =>
+    request<{ success: boolean }>(`/api/deposits/${id}`, { method: "DELETE" }),
   expenses: () => request<Expense[]>("/api/expenses"),
   createExpense: (data: { date: string; amount: number; description: string; shopper_member_id?: number | null }) =>
     request<Expense>("/api/expenses", { method: "POST", body: JSON.stringify(data) }),

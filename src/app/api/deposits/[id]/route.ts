@@ -60,3 +60,34 @@ export async function PATCH(
     return NextResponse.json({ detail: error.message || "Failed to update deposit" }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: Request,
+  context: { params: { id: string } | Promise<{ id: string }> }
+) {
+  try {
+    await initDb();
+    const adminUser = await requireAdmin(request);
+    if (!adminUser) {
+      return NextResponse.json({ detail: "Not enough permissions" }, { status: 403 });
+    }
+
+    const { id } = await context.params;
+    const depositId = parseInt(id);
+
+    const currentList = await sql`
+      SELECT id FROM deposits WHERE id = ${depositId} LIMIT 1
+    `;
+    if (currentList.length === 0) {
+      return NextResponse.json({ detail: "Deposit not found" }, { status: 404 });
+    }
+
+    await sql`
+      DELETE FROM deposits WHERE id = ${depositId}
+    `;
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ detail: error.message || "Failed to delete deposit" }, { status: 500 });
+  }
+}
