@@ -5,7 +5,7 @@ import {
   Home, Users, Utensils, Receipt, Wallet, Calendar,
   Search, Bell, Settings, Plus, Minus, ChevronRight,
   MoreVertical, X, FileText, CalendarDays, Share2, Copy, Check, Loader2, Menu,
-  Pencil, Trash2
+  Pencil, Trash2, Lock
 } from 'lucide-react';
 import { format } from "date-fns";
 import QRCode from 'qrcode';
@@ -355,9 +355,18 @@ export default function App() {
   const MembersView = () => (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex justify-end items-center mb-6 shrink-0">
-        {isAdmin && <Button onClick={() => setMemberModalOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl cursor-pointer">
-          <Plus size={18} className="mr-2" /> Add Member
-        </Button>}
+        <Button 
+          onClick={() => {
+            if (isAdmin) {
+              setMemberModalOpen(true);
+            } else {
+              showToast("Admin Login Required", "Please sign in as an admin to add members.", "error");
+            }
+          }} 
+          className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl cursor-pointer flex items-center gap-2"
+        >
+          {isAdmin ? <Plus size={18} /> : <Lock size={16} />} Add Member
+        </Button>
       </div>
 
       <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl overflow-x-auto">
@@ -375,7 +384,15 @@ export default function App() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {(summary?.member_summaries || []).map(member => (
-              <tr key={member.id} className="hover:bg-secondary/50 transition-colors">
+              <tr 
+                key={member.id} 
+                onClick={() => {
+                  if (!isAdmin) {
+                    showToast("Admin Login Required", "Please sign in as an admin to manage members.", "error");
+                  }
+                }}
+                className={`hover:bg-secondary/50 transition-colors ${!isAdmin ? 'cursor-pointer' : ''}`}
+              >
                 <td className="p-4">
                   <div className="font-semibold text-foreground">{member.name}</div>
                   {isAdmin && member.phone && <div className="text-xs text-muted-foreground">{member.phone}</div>}
@@ -424,9 +441,19 @@ export default function App() {
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col flex-1 min-h-0">
         <div className="flex justify-end items-center gap-2 mb-6 shrink-0">
           <Input type="date" value={mealDate} onChange={e => setMealDate(e.target.value)} className="w-auto bg-card/60" />
-          {isAdmin && <Button disabled={isSavingMeals} onClick={saveMealGrid} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition-all disabled:opacity-70 cursor-pointer">
-            {isSavingMeals ? <><Loader2 className="animate-spin mr-2" size={16} /> Saving...</> : 'Save'}
-          </Button>}
+          <Button 
+            disabled={isAdmin && isSavingMeals} 
+            onClick={() => {
+              if (isAdmin) {
+                saveMealGrid();
+              } else {
+                showToast("Admin Login Required", "Please sign in as an admin to edit and save meals.", "error");
+              }
+            }} 
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition-all disabled:opacity-70 cursor-pointer flex items-center gap-2"
+          >
+            {isAdmin ? (isSavingMeals ? <Loader2 className="animate-spin" size={16} /> : 'Save') : <><Lock size={16} /> Save</>}
+          </Button>
         </div>
 
         <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl flex-1 overflow-hidden flex flex-col">
@@ -469,7 +496,14 @@ export default function App() {
                         return (
                           <React.Fragment key={`${date}-${member.id}`}>
                             {!isSelected || !isAdmin ? (
-                              <td className={`p-2 border-b border-r border-border/50 ${lunchVal > 0 ? 'bg-secondary/50 text-foreground/90 font-medium' : 'text-muted-foreground/80'} text-base`}>
+                              <td 
+                                onClick={() => {
+                                  if (!isAdmin) {
+                                    showToast("Admin Login Required", "Please sign in as an admin to edit meals.", "error");
+                                  }
+                                }}
+                                className={`p-2 border-b border-r border-border/50 ${lunchVal > 0 ? 'bg-secondary/50 text-foreground/90 font-medium' : 'text-muted-foreground/80'} text-base cursor-pointer`}
+                              >
                                 {lunchVal > 0 ? lunchVal : '-'}
                               </td>
                             ) : (
@@ -486,7 +520,14 @@ export default function App() {
                               </td>
                             )}
                             {!isSelected || !isAdmin ? (
-                              <td className={`p-2 border-b border-r border-border/50 ${dinnerVal > 0 ? 'bg-secondary/50 text-foreground/90 font-medium' : 'text-muted-foreground/80'} text-base`}>
+                              <td 
+                                onClick={() => {
+                                  if (!isAdmin) {
+                                    showToast("Admin Login Required", "Please sign in as an admin to edit meals.", "error");
+                                  }
+                                }}
+                                className={`p-2 border-b border-r border-border/50 ${dinnerVal > 0 ? 'bg-secondary/50 text-foreground/90 font-medium' : 'text-muted-foreground/80'} text-base cursor-pointer`}
+                              >
                                 {dinnerVal > 0 ? dinnerVal : '-'}
                               </td>
                             ) : (
@@ -521,9 +562,18 @@ export default function App() {
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex justify-end items-center mb-6 shrink-0">
-          {isAdmin && <Button onClick={() => setExpenseModalOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl cursor-pointer">
-            <Plus size={18} className="mr-2" /> Add Expense
-          </Button>}
+          <Button 
+            onClick={() => {
+              if (isAdmin) {
+                setExpenseModalOpen(true);
+              } else {
+                showToast("Admin Login Required", "Please sign in as an admin to record expenses.", "error");
+              }
+            }} 
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl cursor-pointer flex items-center gap-2"
+          >
+            {isAdmin ? <Plus size={18} /> : <Lock size={16} />} Add Expense
+          </Button>
         </div>
 
         <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl overflow-hidden">
@@ -538,7 +588,15 @@ export default function App() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(exp => (
-                <tr key={exp.id} className="hover:bg-secondary/50 transition-colors">
+                <tr 
+                  key={exp.id} 
+                  onClick={() => {
+                    if (!isAdmin) {
+                      showToast("Admin Login Required", "Please sign in as an admin to manage expenses.", "error");
+                    }
+                  }}
+                  className={`hover:bg-secondary/50 transition-colors ${!isAdmin ? 'cursor-pointer' : ''}`}
+                >
                   <td className="p-4 text-foreground/80 whitespace-nowrap">{exp.date}</td>
                   <td className="p-4 text-foreground">{exp.description}</td>
                   <td className="p-4 text-foreground/80">
@@ -571,9 +629,18 @@ export default function App() {
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex justify-end items-center mb-6 shrink-0">
-          {isAdmin && <Button onClick={() => setDepositModalOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl cursor-pointer">
-            <Plus size={18} className="mr-2" /> Add Deposit
-          </Button>}
+          <Button 
+            onClick={() => {
+              if (isAdmin) {
+                setDepositModalOpen(true);
+              } else {
+                showToast("Admin Login Required", "Please sign in as an admin to add deposits.", "error");
+              }
+            }} 
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl cursor-pointer flex items-center gap-2"
+          >
+            {isAdmin ? <Plus size={18} /> : <Lock size={16} />} Add Deposit
+          </Button>
         </div>
 
         <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl overflow-hidden">
@@ -590,7 +657,15 @@ export default function App() {
             <tbody className="divide-y divide-slate-100">
               {deposits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(dep => {
                 return (
-                  <tr key={dep.id} className="hover:bg-secondary/50 transition-colors">
+                  <tr 
+                    key={dep.id} 
+                    onClick={() => {
+                      if (!isAdmin) {
+                        showToast("Admin Login Required", "Please sign in as an admin to manage deposits.", "error");
+                      }
+                    }}
+                    className={`hover:bg-secondary/50 transition-colors ${!isAdmin ? 'cursor-pointer' : ''}`}
+                  >
                     <td className="p-4 text-foreground/80 whitespace-nowrap">{dep.date}</td>
                     <td className="p-4 font-medium text-foreground">{dep.member_name || 'Unknown'}</td>
                     <td className="p-4 font-bold text-primary/90 text-right font-mono">৳{dep.amount.toLocaleString()}</td>
@@ -805,12 +880,17 @@ export default function App() {
         </nav>
 
         <div className="p-4">
-          {isAdmin && (
-            <div className="bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-5 text-white relative overflow-hidden">
-              <div className="absolute -right-4 -top-4 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
-              <p className="text-xs text-white/80 font-medium mb-1">Month End</p>
-              <h4 className="font-bold text-sm mb-3">Close {monthLabel} &<br />Generate PDF</h4>
-              <Button disabled={isClosingMonth} onClick={async () => {
+          <div className="bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-5 text-white relative overflow-hidden">
+            <div className="absolute -right-4 -top-4 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
+            <p className="text-xs text-white/80 font-medium mb-1">Month End</p>
+            <h4 className="font-bold text-sm mb-3">Close {monthLabel} &<br />Generate PDF</h4>
+            <Button 
+              disabled={isAdmin && isClosingMonth} 
+              onClick={async () => {
+                if (!isAdmin) {
+                  showToast("Admin Login Required", "Please sign in as an admin to close the month.", "error");
+                  return;
+                }
                 if (confirm('Are you sure you want to close this month?')) {
                   setIsClosingMonth(true);
                   try {
@@ -823,11 +903,13 @@ export default function App() {
                     setIsClosingMonth(false);
                   }
                 }
-              }} className="bg-primary-foreground text-primary text-xs font-bold w-full hover:bg-primary/10 transition-colors disabled:opacity-50">
-                {isClosingMonth ? <><Loader2 className="animate-spin mr-2" size={14} /> Closing...</> : 'Close Month'}
-              </Button>
-            </div>
-          )}
+              }} 
+              className="bg-primary-foreground text-primary text-xs font-bold w-full hover:bg-primary/10 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+            >
+              {!isAdmin && <Lock size={12} />}
+              {isClosingMonth && isAdmin ? <><Loader2 className="animate-spin" size={12} /> Closing...</> : 'Close Month'}
+            </Button>
+          </div>
         </div>
       </aside>
 
