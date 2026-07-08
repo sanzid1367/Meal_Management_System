@@ -339,7 +339,7 @@ export default function App() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`font-normal font-mono ${member.balance >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                  <p className={`font-normal font-mono ${member.balance >= 0 ? 'text-foreground' : 'text-destructive'}`}>
                     {member.balance >= 0 ? '+' : ''}৳{member.balance.toFixed(0)}
                   </p>
                   <p className="text-xs text-muted-foreground/80">Balance</p>
