@@ -486,7 +486,7 @@ export default function App() {
                   const isSelected = date === mealDate;
                   return (
                     <tr key={date} className={`hover:bg-secondary/30 ${isSelected ? 'bg-primary/10' : ''}`}>
-                      <td className={`p-3 border-b border-r border-border text-left sticky left-0 bg-card/90 font-light z-10 ${isSelected ? 'text-primary/90' : 'text-foreground/90'}`}>
+                      <td className={`p-3 border-b border-r border-border text-left sticky left-0 bg-card/90 font-light z-10 ${isSelected ? 'text-foreground' : 'text-foreground/90'}`}>
                         {dayNum} <span className="text-xs text-muted-foreground/80 font-normal uppercase">{format(new Date(date), "MMM")}</span>
                       </td>
                       {activeMembers.map(member => {
@@ -668,7 +668,7 @@ export default function App() {
                   >
                     <td className="p-4 text-foreground/80 whitespace-nowrap">{dep.date}</td>
                     <td className="p-4 font-light text-foreground">{dep.member_name || 'Unknown'}</td>
-                    <td className="p-4 font-light text-primary/90 text-right font-mono">৳{dep.amount.toLocaleString()}</td>
+                    <td className="p-4 font-light text-foreground text-right font-mono">৳{dep.amount.toLocaleString()}</td>
                     <td className="p-4 text-center">
                       <Badge className="bg-chart-4/15 text-chart-4 hover:bg-chart-4/25" variant="secondary">Received</Badge>
                     </td>
@@ -767,7 +767,7 @@ export default function App() {
         </Card>
         <Card className="bg-card/60 backdrop-blur-md border border-border rounded-lg p-4">
           <p className="text-muted-foreground text-xs font-light mb-1">Meal Rate</p>
-          <h3 className="text-xl font-light text-primary/90">৳{summary?.totals?.meal_rate?.toFixed(2) || 0}</h3>
+          <h3 className="text-xl font-light text-foreground">৳{summary?.totals?.meal_rate?.toFixed(2) || 0}</h3>
         </Card>
       </div>
 
@@ -796,7 +796,7 @@ export default function App() {
                           {!member.is_active && <Badge className="ml-2 bg-secondary text-muted-foreground text-[10px]" variant="secondary">Inactive</Badge>}
                         </td>
                         <td className="p-4 text-foreground/80 text-right font-mono">৳{member.opening_balance?.toFixed(2) || 0}</td>
-                        <td className="p-4 text-primary/90 font-light text-right font-mono">৳{member.total_deposit?.toLocaleString() || 0}</td>
+                        <td className="p-4 text-foreground font-light text-right font-mono">৳{member.total_deposit?.toLocaleString() || 0}</td>
                         <td className="p-4 text-foreground/80 text-center font-mono">{member.total_meals || 0}</td>
                         <td className="p-4 text-foreground/80 text-right font-mono">৳{member.meal_cost?.toFixed(2) || 0}</td>
                         <td className="p-4 text-right">
