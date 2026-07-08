@@ -239,59 +239,59 @@ export default function App() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Top Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <Card className="bg-gradient-to-br from-card/60 to-card/30 backdrop-blur-md border-border border rounded-2xl">
+        <Card className="bg-gradient-to-br from-card/60 to-card/30 backdrop-blur-md border-border border rounded-lg">
           <CardContent className="p-6">
             <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-emerald-500/15 text-emerald-500 rounded-xl">
+              <div className="p-3 bg-emerald-500/15 text-emerald-500 rounded-md">
                 <Wallet size={24} />
               </div>
             </div>
-            <p className="text-muted-foreground text-sm font-medium mb-1">Total Deposits</p>
-            <h2 className="text-3xl font-bold text-foreground font-mono">৳{summary?.totals.total_deposit.toLocaleString() || 0}</h2>
+            <p className="text-muted-foreground text-sm font-light mb-1">Total Deposits</p>
+            <h2 className="text-3xl font-light text-foreground font-mono">৳{summary?.totals.total_deposit.toLocaleString() || 0}</h2>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-card/60 to-card/30 backdrop-blur-md border-border border rounded-2xl">
+        <Card className="bg-gradient-to-br from-card/60 to-card/30 backdrop-blur-md border-border border rounded-lg">
           <CardContent className="p-6">
             <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-primary/15 text-primary rounded-xl">
+              <div className="p-3 bg-primary/15 text-primary rounded-md">
                 <Receipt size={24} />
               </div>
             </div>
-            <p className="text-muted-foreground text-sm font-medium mb-1">Total Expense</p>
-            <h2 className="text-3xl font-bold text-foreground font-mono">৳{summary?.totals.total_expense.toLocaleString() || 0}</h2>
+            <p className="text-muted-foreground text-sm font-light mb-1">Total Expense</p>
+            <h2 className="text-3xl font-light text-foreground font-mono">৳{summary?.totals.total_expense.toLocaleString() || 0}</h2>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-card/60 to-card/30 backdrop-blur-md border-border border rounded-2xl">
+        <Card className="bg-gradient-to-br from-card/60 to-card/30 backdrop-blur-md border-border border rounded-lg">
           <CardContent className="p-6">
             <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-chart-3/15 text-chart-3 rounded-xl">
+              <div className="p-3 bg-chart-3/15 text-chart-3 rounded-md">
                 <Wallet size={24} />
               </div>
             </div>
-            <p className="text-muted-foreground text-sm font-medium mb-1">Cash in Hand</p>
-            <h2 className="text-3xl font-bold text-foreground font-mono">৳{summary?.totals.cash_in_hand.toLocaleString() || 0}</h2>
+            <p className="text-muted-foreground text-sm font-light mb-1">Cash in Hand</p>
+            <h2 className="text-3xl font-light text-foreground font-mono">৳{summary?.totals.cash_in_hand.toLocaleString() || 0}</h2>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-card/60 to-card/30 backdrop-blur-md border-border border rounded-2xl">
+        <Card className="bg-gradient-to-br from-card/60 to-card/30 backdrop-blur-md border-border border rounded-lg">
           <CardContent className="p-6">
             <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-chart-2/15 text-chart-2 rounded-xl">
+              <div className="p-3 bg-chart-2/15 text-chart-2 rounded-md">
                 <Utensils size={24} />
               </div>
             </div>
-            <p className="text-muted-foreground text-sm font-medium mb-1">Current Meal Rate</p>
-            <h2 className="text-3xl font-bold text-foreground font-mono">৳{summary?.totals.meal_rate.toFixed(2) || 0}</h2>
+            <p className="text-muted-foreground text-sm font-light mb-1">Current Meal Rate</p>
+            <h2 className="text-3xl font-light text-foreground font-mono">৳{summary?.totals.meal_rate.toFixed(2) || 0}</h2>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-primary to-primary/80 border-none text-white flex flex-col justify-between rounded-2xl">
+        <Card className="bg-gradient-to-br from-primary to-primary/80 border-none text-white flex flex-col justify-between rounded-lg">
           <CardContent className="p-6 h-full flex flex-col justify-between">
             <div>
-              <p className="text-white/80 text-sm font-medium mb-1">Total Meals Served</p>
-              <h2 className="text-4xl font-bold font-mono">{summary?.totals.total_meals.toFixed(1) || 0}</h2>
+              <p className="text-white/80 text-sm font-light mb-1">Total Meals Served</p>
+              <h2 className="text-4xl font-light font-mono">{summary?.totals.total_meals.toFixed(1) || 0}</h2>
             </div>
             <div className="mt-4">
               <button onClick={() => setActiveTab('meals')} className="text-sm bg-white/20 hover:bg-white/30 transition-colors py-2 px-4 rounded-lg w-full text-left flex justify-between items-center backdrop-blur-sm cursor-pointer">
@@ -304,10 +304,10 @@ export default function App() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Chart area */}
-        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-2xl p-6 lg:col-span-2 flex flex-col">
+        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-lg p-6 lg:col-span-2 flex flex-col">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-foreground">Expense Trend ({format(new Date(expenses[0]?.date || today), 'MMM')})</h3>
-            <button onClick={() => setActiveTab('expenses')} className="text-primary text-sm font-medium hover:underline cursor-pointer">View Ledger</button>
+            <h3 className="text-lg font-light text-foreground">Expense Trend ({format(new Date(expenses[0]?.date || today), 'MMM')})</h3>
+            <button onClick={() => setActiveTab('expenses')} className="text-primary text-sm font-light hover:underline cursor-pointer">View Ledger</button>
           </div>
           <div className="flex-1 min-h-[250px]">
             <ExpenseChart data={expenseChartData} />
@@ -315,31 +315,31 @@ export default function App() {
         </Card>
 
         {/* Member Balances Mini-List */}
-        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-2xl p-6 flex flex-col">
+        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-lg p-6 flex flex-col">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-foreground">Member Balances</h3>
-            <button onClick={() => setActiveTab('members')} className="text-primary text-sm font-medium hover:underline cursor-pointer">View All</button>
+            <h3 className="text-lg font-light text-foreground">Member Balances</h3>
+            <button onClick={() => setActiveTab('members')} className="text-primary text-sm font-light hover:underline cursor-pointer">View All</button>
           </div>
           <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
             {(summary?.member_summaries || []).filter(m => m.is_active).sort((a, b) => a.balance - b.balance).map((member, i) => (
               <div 
                 key={member.id} 
                 onClick={() => setActiveTab('members')}
-                className="flex items-center justify-between p-3 rounded-xl hover:bg-secondary/50 transition-colors border border-transparent hover:border-border/50 cursor-pointer"
+                className="flex items-center justify-between p-3 rounded-md hover:bg-secondary/50 transition-colors border border-transparent hover:border-border/50 cursor-pointer"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-normal text-sm
                     ${i === 0 ? 'bg-destructive/15 text-destructive' : 'bg-secondary text-foreground/80'}
                   `}>
                     {member.name.substring(0, 2).toUpperCase()}
                   </div>
                   <div>
-                    <p className="font-semibold text-foreground">{member.name}</p>
+                    <p className="font-normal text-foreground">{member.name}</p>
                     <p className="text-xs text-muted-foreground font-mono">{member.total_meals} meals</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`font-bold font-mono ${member.balance >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                  <p className={`font-normal font-mono ${member.balance >= 0 ? 'text-primary' : 'text-destructive'}`}>
                     {member.balance >= 0 ? '+' : ''}৳{member.balance.toFixed(0)}
                   </p>
                   <p className="text-xs text-muted-foreground/80">Balance</p>
@@ -363,23 +363,23 @@ export default function App() {
               showToast("Admin Login Required", "Please sign in as an admin to add members.", "error");
             }
           }} 
-          className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl cursor-pointer flex items-center gap-2"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md cursor-pointer flex items-center gap-2"
         >
           {isAdmin ? <Plus size={18} /> : <Lock size={16} />} Add Member
         </Button>
       </div>
 
-      <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl overflow-x-auto">
+      <div className="bg-card/60 backdrop-blur-md border border-border rounded-lg overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-border text-muted-foreground text-sm">
-              <th className="p-4 font-medium">Name</th>
-              <th className="p-4 font-medium">Status</th>
-              <th className="p-4 font-medium">Deposits</th>
-              <th className="p-4 font-medium">Meals</th>
-              <th className="p-4 font-medium">Total Cost</th>
-              <th className="p-4 font-medium">Balance</th>
-              {isAdmin && <th className="p-4 font-medium text-right">Actions</th>}
+              <th className="p-4 font-light">Name</th>
+              <th className="p-4 font-light">Status</th>
+              <th className="p-4 font-light">Deposits</th>
+              <th className="p-4 font-light">Meals</th>
+              <th className="p-4 font-light">Total Cost</th>
+              <th className="p-4 font-light">Balance</th>
+              {isAdmin && <th className="p-4 font-light text-right">Actions</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -394,17 +394,17 @@ export default function App() {
                 className={`hover:bg-secondary/50 transition-colors ${!isAdmin ? 'cursor-pointer' : ''}`}
               >
                 <td className="p-4">
-                  <div className="font-semibold text-foreground">{member.name}</div>
+                  <div className="font-normal text-foreground">{member.name}</div>
                   {isAdmin && member.phone && <div className="text-xs text-muted-foreground">{member.phone}</div>}
                 </td>
                 <td className="p-4">
                   {member.is_active ? <Badge className="bg-primary/15 text-primary hover:bg-primary/25" variant="secondary">Active</Badge> : <Badge className="bg-secondary text-foreground/90 hover:bg-secondary/80" variant="secondary">Inactive</Badge>}
                 </td>
-                <td className="p-4 font-medium text-foreground/90 font-mono">৳{member.total_deposit}</td>
+                <td className="p-4 font-light text-foreground/90 font-mono">৳{member.total_deposit}</td>
                 <td className="p-4 text-foreground/80 font-mono">{member.total_meals}</td>
                 <td className="p-4 text-foreground/80 font-mono">৳{member.meal_cost.toFixed(2)}</td>
                 <td className="p-4">
-                  <span className={`font-bold px-2 py-1 rounded-md font-mono ${member.balance >= 0 ? 'bg-chart-4/10 text-chart-4' : 'bg-destructive/10 text-destructive'}`}>
+                  <span className={`font-normal px-2 py-1 rounded-md font-mono ${member.balance >= 0 ? 'bg-chart-4/10 text-chart-4' : 'bg-destructive/10 text-destructive'}`}>
                     {member.balance >= 0 ? '+' : ''}৳{member.balance.toFixed(2)}
                   </span>
                 </td>
@@ -450,23 +450,23 @@ export default function App() {
                 showToast("Admin Login Required", "Please sign in as an admin to edit and save meals.", "error");
               }
             }} 
-            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl transition-all disabled:opacity-70 cursor-pointer flex items-center gap-2"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md transition-all disabled:opacity-70 cursor-pointer flex items-center gap-2"
           >
             {isAdmin ? (isSavingMeals ? <Loader2 className="animate-spin" size={16} /> : 'Save') : <><Lock size={16} /> Save</>}
           </Button>
         </div>
 
-        <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl flex-1 overflow-hidden flex flex-col">
+        <div className="bg-card/60 backdrop-blur-md border border-border rounded-lg flex-1 overflow-hidden flex flex-col">
           <div className="overflow-auto custom-scrollbar flex-1">
             <table className="w-full text-center border-collapse min-w-[800px]">
               <thead className="sticky top-0 bg-card/90 backdrop-blur-md z-10">
                 <tr>
                   <th className="p-3 border-b border-r border-border text-left sticky left-0 bg-card/90 backdrop-blur-md z-20 w-32">
-                    <span className="text-sm font-medium text-muted-foreground">Date</span>
+                    <span className="text-sm font-light text-muted-foreground">Date</span>
                   </th>
                   {activeMembers.map(member => (
                     <th key={member.id} colSpan={2} className="p-2 border-b border-r border-border min-w-[140px]">
-                      <div className="text-sm font-bold text-foreground/90 truncate max-w-[140px]" title={member.name}>{member.name}</div>
+                      <div className="text-sm font-light text-foreground/90 truncate max-w-[140px]" title={member.name}>{member.name}</div>
                     </th>
                   ))}
                 </tr>
@@ -474,8 +474,8 @@ export default function App() {
                   <th className="p-2 border-b border-r border-border sticky left-0 bg-card/90 backdrop-blur-md z-20"></th>
                   {activeMembers.map(member => (
                     <React.Fragment key={`${member.id}-sub`}>
-                      <th className="p-1 border-b border-r border-border/50 text-[10px] font-medium text-muted-foreground bg-secondary/50 min-w-[70px]">L</th>
-                      <th className="p-1 border-b border-r border-border text-[10px] font-medium text-muted-foreground bg-secondary/50 min-w-[70px]">D</th>
+                      <th className="p-1 border-b border-r border-border/50 text-[10px] font-light text-muted-foreground bg-secondary/50 min-w-[70px]">L</th>
+                      <th className="p-1 border-b border-r border-border text-[10px] font-light text-muted-foreground bg-secondary/50 min-w-[70px]">D</th>
                     </React.Fragment>
                   ))}
                 </tr>
@@ -486,7 +486,7 @@ export default function App() {
                   const isSelected = date === mealDate;
                   return (
                     <tr key={date} className={`hover:bg-secondary/30 ${isSelected ? 'bg-primary/10' : ''}`}>
-                      <td className={`p-3 border-b border-r border-border text-left sticky left-0 bg-card/90 font-medium z-10 ${isSelected ? 'text-primary/90' : 'text-foreground/90'}`}>
+                      <td className={`p-3 border-b border-r border-border text-left sticky left-0 bg-card/90 font-light z-10 ${isSelected ? 'text-primary/90' : 'text-foreground/90'}`}>
                         {dayNum} <span className="text-xs text-muted-foreground/80 font-normal uppercase">{format(new Date(date), "MMM")}</span>
                       </td>
                       {activeMembers.map(member => {
@@ -502,7 +502,7 @@ export default function App() {
                                     showToast("Admin Login Required", "Please sign in as an admin to edit meals.", "error");
                                   }
                                 }}
-                                className={`p-2 border-b border-r border-border/50 ${lunchVal > 0 ? 'bg-secondary/50 text-foreground/90 font-medium' : 'text-muted-foreground/80'} text-base cursor-pointer`}
+                                className={`p-2 border-b border-r border-border/50 ${lunchVal > 0 ? 'bg-secondary/50 text-foreground/90 font-light' : 'text-muted-foreground/80'} text-base cursor-pointer`}
                               >
                                 {lunchVal > 0 ? lunchVal : '-'}
                               </td>
@@ -514,7 +514,7 @@ export default function App() {
                                   min="0"
                                   value={lunchVal === 0 ? '' : lunchVal}
                                   onChange={(e) => setMealValue(date, member.id, 'lunch', 'count', Number(e.target.value))}
-                                  className="w-full min-w-[60px] h-8 text-center bg-transparent text-base focus:outline-none focus:bg-card focus:ring-2 focus:ring-primary rounded px-1 py-1 text-foreground font-medium placeholder-muted-foreground/50"
+                                  className="w-full min-w-[60px] h-8 text-center bg-transparent text-base focus:outline-none focus:bg-card focus:ring-2 focus:ring-primary rounded px-1 py-1 text-foreground font-light placeholder-muted-foreground/50"
                                   placeholder="-"
                                 />
                               </td>
@@ -526,7 +526,7 @@ export default function App() {
                                     showToast("Admin Login Required", "Please sign in as an admin to edit meals.", "error");
                                   }
                                 }}
-                                className={`p-2 border-b border-r border-border/50 ${dinnerVal > 0 ? 'bg-secondary/50 text-foreground/90 font-medium' : 'text-muted-foreground/80'} text-base cursor-pointer`}
+                                className={`p-2 border-b border-r border-border/50 ${dinnerVal > 0 ? 'bg-secondary/50 text-foreground/90 font-light' : 'text-muted-foreground/80'} text-base cursor-pointer`}
                               >
                                 {dinnerVal > 0 ? dinnerVal : '-'}
                               </td>
@@ -538,7 +538,7 @@ export default function App() {
                                   min="0"
                                   value={dinnerVal === 0 ? '' : dinnerVal}
                                   onChange={(e) => setMealValue(date, member.id, 'dinner', 'count', Number(e.target.value))}
-                                  className="w-full min-w-[60px] h-8 text-center bg-transparent text-base focus:outline-none focus:bg-card focus:ring-2 focus:ring-primary rounded px-1 py-1 text-foreground font-medium placeholder-muted-foreground/50"
+                                  className="w-full min-w-[60px] h-8 text-center bg-transparent text-base focus:outline-none focus:bg-card focus:ring-2 focus:ring-primary rounded px-1 py-1 text-foreground font-light placeholder-muted-foreground/50"
                                   placeholder="-"
                                 />
                               </td>
@@ -570,20 +570,20 @@ export default function App() {
                 showToast("Admin Login Required", "Please sign in as an admin to record expenses.", "error");
               }
             }} 
-            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl cursor-pointer flex items-center gap-2"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md cursor-pointer flex items-center gap-2"
           >
             {isAdmin ? <Plus size={18} /> : <Lock size={16} />} Add Expense
           </Button>
         </div>
 
-        <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card/60 backdrop-blur-md border border-border rounded-lg overflow-hidden">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-border text-muted-foreground text-sm bg-secondary/50">
-                <th className="p-4 font-medium">Date</th>
-                <th className="p-4 font-medium">Description</th>
-                <th className="p-4 font-medium">Shopper</th>
-                <th className="p-4 font-medium text-right">Amount</th>
+                <th className="p-4 font-light">Date</th>
+                <th className="p-4 font-light">Description</th>
+                <th className="p-4 font-light">Shopper</th>
+                <th className="p-4 font-light text-right">Amount</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -601,18 +601,18 @@ export default function App() {
                   <td className="p-4 text-foreground">{exp.description}</td>
                   <td className="p-4 text-foreground/80">
                     <span className="inline-flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-full bg-secondary text-[10px] flex items-center justify-center font-bold text-foreground/80">
+                      <span className="w-6 h-6 rounded-md bg-secondary text-[10px] flex items-center justify-center font-light text-foreground/80">
                         {(exp.shopper_name || '?').substring(0, 2).toUpperCase()}
                       </span>
                       {exp.shopper_name || '-'}
                     </span>
                   </td>
-                  <td className="p-4 font-bold text-foreground text-right font-mono">৳{exp.amount.toLocaleString()}</td>
+                  <td className="p-4 font-light text-foreground text-right font-mono">৳{exp.amount.toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t border-border bg-secondary/30 font-bold text-foreground">
+              <tr className="border-t border-border bg-secondary/30 font-light text-foreground">
                 <td className="p-4">Total</td>
                 <td className="p-4" colSpan={2}></td>
                 <td className="p-4 text-right font-mono">৳{totalExpensesSum.toLocaleString()}</td>
@@ -637,21 +637,21 @@ export default function App() {
                 showToast("Admin Login Required", "Please sign in as an admin to add deposits.", "error");
               }
             }} 
-            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl cursor-pointer flex items-center gap-2"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md cursor-pointer flex items-center gap-2"
           >
             {isAdmin ? <Plus size={18} /> : <Lock size={16} />} Add Deposit
           </Button>
         </div>
 
-        <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl overflow-hidden">
+        <div className="bg-card/60 backdrop-blur-md border border-border rounded-lg overflow-hidden">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-border text-muted-foreground text-sm bg-secondary/50">
-                <th className="p-4 font-medium">Date</th>
-                <th className="p-4 font-medium">Member</th>
-                <th className="p-4 font-medium text-right">Amount</th>
-                <th className="p-4 font-medium text-center">Status</th>
-                {isAdmin && <th className="p-4 font-medium text-right">Actions</th>}
+                <th className="p-4 font-light">Date</th>
+                <th className="p-4 font-light">Member</th>
+                <th className="p-4 font-light text-right">Amount</th>
+                <th className="p-4 font-light text-center">Status</th>
+                {isAdmin && <th className="p-4 font-light text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -667,8 +667,8 @@ export default function App() {
                     className={`hover:bg-secondary/50 transition-colors ${!isAdmin ? 'cursor-pointer' : ''}`}
                   >
                     <td className="p-4 text-foreground/80 whitespace-nowrap">{dep.date}</td>
-                    <td className="p-4 font-medium text-foreground">{dep.member_name || 'Unknown'}</td>
-                    <td className="p-4 font-bold text-primary/90 text-right font-mono">৳{dep.amount.toLocaleString()}</td>
+                    <td className="p-4 font-light text-foreground">{dep.member_name || 'Unknown'}</td>
+                    <td className="p-4 font-light text-primary/90 text-right font-mono">৳{dep.amount.toLocaleString()}</td>
                     <td className="p-4 text-center">
                       <Badge className="bg-chart-4/15 text-chart-4 hover:bg-chart-4/25" variant="secondary">Received</Badge>
                     </td>
@@ -713,7 +713,7 @@ export default function App() {
               })}
             </tbody>
             <tfoot>
-              <tr className="border-t border-border bg-secondary/30 font-bold text-foreground">
+              <tr className="border-t border-border bg-secondary/30 font-light text-foreground">
                 <td className="p-4">Total</td>
                 <td className="p-4"></td>
                 <td className="p-4 text-right font-mono">৳{totalDepositsSum.toLocaleString()}</td>
@@ -747,41 +747,41 @@ export default function App() {
             console.error("Export failed", err);
             alert("Failed to export CSV");
           }
-        }} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">
+        }} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md">
           <FileText size={18} className="mr-2" /> Export CSV
         </Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 shrink-0">
-        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-2xl p-4">
-          <p className="text-muted-foreground text-xs font-medium mb-1">Total Expenses</p>
-          <h3 className="text-xl font-bold text-foreground">৳{summary?.totals?.total_expense?.toLocaleString() || 0}</h3>
+        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-lg p-4">
+          <p className="text-muted-foreground text-xs font-light mb-1">Total Expenses</p>
+          <h3 className="text-xl font-light text-foreground">৳{summary?.totals?.total_expense?.toLocaleString() || 0}</h3>
         </Card>
-        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-2xl p-4">
-          <p className="text-muted-foreground text-xs font-medium mb-1">Total Deposits</p>
-          <h3 className="text-xl font-bold text-foreground">৳{summary?.totals?.total_deposit?.toLocaleString() || 0}</h3>
+        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-lg p-4">
+          <p className="text-muted-foreground text-xs font-light mb-1">Total Deposits</p>
+          <h3 className="text-xl font-light text-foreground">৳{summary?.totals?.total_deposit?.toLocaleString() || 0}</h3>
         </Card>
-        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-2xl p-4">
-          <p className="text-muted-foreground text-xs font-medium mb-1">Total Meals</p>
-          <h3 className="text-xl font-bold text-foreground">{summary?.totals?.total_meals?.toFixed(1) || 0}</h3>
+        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-lg p-4">
+          <p className="text-muted-foreground text-xs font-light mb-1">Total Meals</p>
+          <h3 className="text-xl font-light text-foreground">{summary?.totals?.total_meals?.toFixed(1) || 0}</h3>
         </Card>
-        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-2xl p-4">
-          <p className="text-muted-foreground text-xs font-medium mb-1">Meal Rate</p>
-          <h3 className="text-xl font-bold text-primary/90">৳{summary?.totals?.meal_rate?.toFixed(2) || 0}</h3>
+        <Card className="bg-card/60 backdrop-blur-md border border-border rounded-lg p-4">
+          <p className="text-muted-foreground text-xs font-light mb-1">Meal Rate</p>
+          <h3 className="text-xl font-light text-primary/90">৳{summary?.totals?.meal_rate?.toFixed(2) || 0}</h3>
         </Card>
       </div>
 
-      <div className="bg-card/60 backdrop-blur-md border border-border rounded-2xl flex-1 overflow-hidden flex flex-col min-h-0">
+      <div className="bg-card/60 backdrop-blur-md border border-border rounded-lg flex-1 overflow-hidden flex flex-col min-h-0">
         <div className="overflow-auto custom-scrollbar flex-1">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead className="sticky top-0 bg-card/90 backdrop-blur-md z-10">
               <tr className="border-b border-border text-muted-foreground text-sm">
-                <th className="p-4 font-medium">Member Name</th>
-                <th className="p-4 font-medium text-right">Opening Bal.</th>
-                <th className="p-4 font-medium text-right">Deposits</th>
-                <th className="p-4 font-medium text-center">Meals</th>
-                <th className="p-4 font-medium text-right">Per Person Cost</th>
-                <th className="p-4 font-medium text-right">Due/Refund</th>
+                <th className="p-4 font-light">Member Name</th>
+                <th className="p-4 font-light text-right">Opening Bal.</th>
+                <th className="p-4 font-light text-right">Deposits</th>
+                <th className="p-4 font-light text-center">Meals</th>
+                <th className="p-4 font-light text-right">Per Person Cost</th>
+                <th className="p-4 font-light text-right">Due/Refund</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -791,16 +791,16 @@ export default function App() {
                   if (member.is_active || member.balance !== 0) {
                     rows.push(
                       <tr key={member.id} className="hover:bg-secondary/50 transition-colors">
-                        <td className="p-4 font-semibold text-foreground">
+                        <td className="p-4 font-normal text-foreground">
                           {member.name}
                           {!member.is_active && <Badge className="ml-2 bg-secondary text-muted-foreground text-[10px]" variant="secondary">Inactive</Badge>}
                         </td>
                         <td className="p-4 text-foreground/80 text-right font-mono">৳{member.opening_balance?.toFixed(2) || 0}</td>
-                        <td className="p-4 text-primary/90 font-medium text-right font-mono">৳{member.total_deposit?.toLocaleString() || 0}</td>
+                        <td className="p-4 text-primary/90 font-light text-right font-mono">৳{member.total_deposit?.toLocaleString() || 0}</td>
                         <td className="p-4 text-foreground/80 text-center font-mono">{member.total_meals || 0}</td>
                         <td className="p-4 text-foreground/80 text-right font-mono">৳{member.meal_cost?.toFixed(2) || 0}</td>
                         <td className="p-4 text-right">
-                          <span className={`font-bold px-2 py-1 rounded-md font-mono ${member.balance >= 0 ? 'bg-chart-4/10 text-chart-4' : 'bg-destructive/10 text-destructive'}`}>
+                          <span className={`font-normal px-2 py-1 rounded-md font-mono ${member.balance >= 0 ? 'bg-chart-4/10 text-chart-4' : 'bg-destructive/10 text-destructive'}`}>
                             {member.balance >= 0 ? '+' : ''}৳{member.balance?.toFixed(2) || 0}
                           </span>
                         </td>
@@ -825,7 +825,7 @@ export default function App() {
           setActiveTab(id);
           setIsMobileOpen(false);
         }}
-        className={`transition-all duration-300 ease-in-out font-medium rounded-xl flex items-center gap-3 px-4 py-3 w-full cursor-pointer
+        className={`transition-all duration-300 ease-in-out font-light rounded-md flex items-center gap-3 px-4 py-3 w-full cursor-pointer
           ${active ? 'bg-primary text-primary-foreground' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`}
       >
         <Icon size={20} /> {label}
@@ -851,7 +851,7 @@ export default function App() {
       `}>
         <div className="p-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-normal text-xl">
               M
             </div>
             <span className="text-xl font-extrabold tracking-tight text-foreground">Mess<span className="text-primary">Sync</span></span>
@@ -860,7 +860,7 @@ export default function App() {
             variant="ghost"
             size="icon"
             onClick={() => setIsMobileOpen(false)}
-            className="md:hidden rounded-xl hover:bg-secondary/80 text-muted-foreground hover:text-foreground cursor-pointer"
+            className="md:hidden rounded-md hover:bg-secondary/80 text-muted-foreground hover:text-foreground cursor-pointer"
           >
             <X size={20} />
           </Button>
@@ -874,16 +874,16 @@ export default function App() {
           <SidebarItem id="deposits" icon={Wallet} label="Deposits" />
 
           <div className="pt-6 pb-2">
-            <p className="px-4 text-xs font-semibold text-muted-foreground/80 uppercase tracking-wider">System</p>
+            <p className="px-4 text-xs font-normal text-muted-foreground/80 uppercase tracking-wider">System</p>
           </div>
           <SidebarItem id="reports" icon={FileText} label="Reports" />
         </nav>
 
         <div className="p-4">
-          <div className="bg-gradient-to-br from-primary to-primary/80 rounded-2xl p-5 text-white relative overflow-hidden">
+          <div className="bg-gradient-to-br from-primary to-primary/80 rounded-lg p-5 text-white relative overflow-hidden">
             <div className="absolute -right-4 -top-4 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
-            <p className="text-xs text-white/80 font-medium mb-1">Month End</p>
-            <h4 className="font-bold text-sm mb-3">Close {monthLabel} &<br />Generate PDF</h4>
+            <p className="text-xs text-white/80 font-light mb-1">Month End</p>
+            <h4 className="font-light text-sm mb-3">Close {monthLabel} &<br />Generate PDF</h4>
             <Button 
               disabled={isAdmin && isClosingMonth} 
               onClick={async () => {
@@ -904,7 +904,7 @@ export default function App() {
                   }
                 }
               }} 
-              className="bg-primary-foreground text-primary text-xs font-bold w-full hover:bg-primary/10 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+              className="bg-primary-foreground text-primary text-xs font-light w-full hover:bg-primary/10 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
             >
               {!isAdmin && <Lock size={12} />}
               {isClosingMonth && isAdmin ? <><Loader2 className="animate-spin" size={12} /> Closing...</> : 'Close Month'}
@@ -926,14 +926,14 @@ export default function App() {
                   toggleSidebar();
                 }
               }}
-              className="rounded-xl hover:bg-secondary/80 text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
+              className="rounded-md hover:bg-secondary/80 text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
               title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
             >
               <Menu size={20} />
             </Button>
             
             <div className="flex flex-col">
-              <h1 className="text-lg font-bold text-foreground leading-tight">
+              <h1 className="text-lg font-light text-foreground leading-tight">
                 {tabInfo[activeTab]?.title}
               </h1>
               <p className="text-xs text-muted-foreground hidden sm:block">
@@ -947,12 +947,12 @@ export default function App() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShareModalOpen(true)}
-                className="rounded-xl border-primary/20 text-primary bg-primary/10 hover:bg-primary hover:text-primary-foreground flex items-center gap-1.5 transition-all cursor-pointer animate-in fade-in"
+                className="rounded-md border-primary/20 text-primary bg-primary/10 hover:bg-primary hover:text-primary-foreground flex items-center gap-1.5 transition-all cursor-pointer animate-in fade-in"
               >
                 <Share2 size={16} /> Share System
               </Button>
-              <span className="text-sm font-medium text-foreground/80 bg-card/50 px-3 py-1 rounded-full">{user ? `${user.username} (${user.role})` : 'Viewer Mode'}</span>
-              {user && <Button variant="outline" size="sm" onClick={() => { localStorage.removeItem("access_token"); localStorage.removeItem("user"); window.location.reload(); }} className="rounded-xl border-border text-foreground/80 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors cursor-pointer">Logout</Button>}
+              <span className="text-sm font-light text-foreground/80 bg-card/50 px-3 py-1 rounded-md">{user ? `${user.username} (${user.role})` : 'Viewer Mode'}</span>
+              {user && <Button variant="outline" size="sm" onClick={() => { localStorage.removeItem("access_token"); localStorage.removeItem("user"); window.location.reload(); }} className="rounded-md border-border text-foreground/80 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors cursor-pointer">Logout</Button>}
             </div>
           </div>
         </header>
@@ -970,7 +970,7 @@ export default function App() {
       </main>
 
       <Dialog open={isExpenseModalOpen} onOpenChange={setExpenseModalOpen}>
-        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-2xl">
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-lg">
           <DialogHeader>
             <DialogTitle>Add Daily Expense</DialogTitle>
           </DialogHeader>
@@ -991,21 +991,21 @@ export default function App() {
             }
           }}>
             <div>
-              <label className="block text-sm font-medium text-foreground/90 mb-1">Date</label>
-              <Input name="date" type="date" defaultValue={today} className="bg-secondary focus-visible:ring-primary rounded-xl" required />
+              <label className="block text-sm font-light text-foreground/90 mb-1">Date</label>
+              <Input name="date" type="date" defaultValue={today} className="bg-secondary focus-visible:ring-primary rounded-md" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground/90 mb-1">Amount (৳)</label>
-              <Input name="amount" type="number" min="0" step="0.01" placeholder="0.00" className="bg-secondary focus-visible:ring-primary rounded-xl" required />
+              <label className="block text-sm font-light text-foreground/90 mb-1">Amount (৳)</label>
+              <Input name="amount" type="number" min="0" step="0.01" placeholder="0.00" className="bg-secondary focus-visible:ring-primary rounded-md" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground/90 mb-1">Items Description</label>
-              <Input name="description" type="text" placeholder="e.g., Rice, Chicken, Onion" className="bg-secondary focus-visible:ring-primary rounded-xl" required />
+              <label className="block text-sm font-light text-foreground/90 mb-1">Items Description</label>
+              <Input name="description" type="text" placeholder="e.g., Rice, Chicken, Onion" className="bg-secondary focus-visible:ring-primary rounded-md" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground/90 mb-1">Purchased By</label>
+              <label className="block text-sm font-light text-foreground/90 mb-1">Purchased By</label>
               <Select name="shopper_member_id">
-                <SelectTrigger className="bg-secondary focus-visible:ring-primary rounded-xl">
+                <SelectTrigger className="bg-secondary focus-visible:ring-primary rounded-md">
                   <SelectValue placeholder="Select Shopper..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -1014,15 +1014,15 @@ export default function App() {
               </Select>
             </div>
             <div className="pt-4 flex gap-3">
-              <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={() => setExpenseModalOpen(false)}>Cancel</Button>
-              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">Save Expense</Button>
+              <Button type="button" variant="outline" className="flex-1 rounded-md" onClick={() => setExpenseModalOpen(false)}>Cancel</Button>
+              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md">Save Expense</Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isDepositModalOpen} onOpenChange={setDepositModalOpen}>
-        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-2xl">
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-lg">
           <DialogHeader>
             <DialogTitle>Add Member Deposit</DialogTitle>
           </DialogHeader>
@@ -1043,13 +1043,13 @@ export default function App() {
             }
           }}>
             <div>
-              <label className="block text-sm font-medium text-foreground/90 mb-1">Date</label>
-              <Input name="date" type="date" defaultValue={today} className="bg-secondary focus-visible:ring-primary rounded-xl" required />
+              <label className="block text-sm font-light text-foreground/90 mb-1">Date</label>
+              <Input name="date" type="date" defaultValue={today} className="bg-secondary focus-visible:ring-primary rounded-md" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground/90 mb-1">Member</label>
+              <label className="block text-sm font-light text-foreground/90 mb-1">Member</label>
               <Select name="member_id" required>
-                <SelectTrigger className="bg-secondary focus-visible:ring-primary rounded-xl">
+                <SelectTrigger className="bg-secondary focus-visible:ring-primary rounded-md">
                   <SelectValue placeholder="Select Member..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -1058,19 +1058,19 @@ export default function App() {
               </Select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground/90 mb-1">Amount (৳)</label>
-              <Input name="amount" type="number" min="0" step="0.01" placeholder="0.00" className="bg-secondary focus-visible:ring-primary rounded-xl" required />
+              <label className="block text-sm font-light text-foreground/90 mb-1">Amount (৳)</label>
+              <Input name="amount" type="number" min="0" step="0.01" placeholder="0.00" className="bg-secondary focus-visible:ring-primary rounded-md" required />
             </div>
             <div className="pt-4 flex gap-3">
-              <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={() => setDepositModalOpen(false)}>Cancel</Button>
-              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">Add Deposit</Button>
+              <Button type="button" variant="outline" className="flex-1 rounded-md" onClick={() => setDepositModalOpen(false)}>Cancel</Button>
+              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md">Add Deposit</Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isEditDepositModalOpen} onOpenChange={setEditDepositModalOpen}>
-        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-2xl">
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-lg">
           <DialogHeader>
             <DialogTitle>Edit Member Deposit</DialogTitle>
           </DialogHeader>
@@ -1092,13 +1092,13 @@ export default function App() {
               }
             }}>
               <div>
-                <label className="block text-sm font-medium text-foreground/90 mb-1">Date</label>
-                <Input name="date" type="date" defaultValue={editingDeposit.date} className="bg-secondary focus-visible:ring-primary rounded-xl" required />
+                <label className="block text-sm font-light text-foreground/90 mb-1">Date</label>
+                <Input name="date" type="date" defaultValue={editingDeposit.date} className="bg-secondary focus-visible:ring-primary rounded-md" required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground/90 mb-1">Member</label>
+                <label className="block text-sm font-light text-foreground/90 mb-1">Member</label>
                 <Select name="member_id" defaultValue={editingDeposit.member_id.toString()} required>
-                  <SelectTrigger className="bg-secondary focus-visible:ring-primary rounded-xl">
+                  <SelectTrigger className="bg-secondary focus-visible:ring-primary rounded-md">
                     <SelectValue placeholder="Select Member..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -1107,16 +1107,16 @@ export default function App() {
                 </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground/90 mb-1">Amount (৳)</label>
-                <Input name="amount" type="number" min="0" step="0.01" defaultValue={editingDeposit.amount} className="bg-secondary focus-visible:ring-primary rounded-xl" required />
+                <label className="block text-sm font-light text-foreground/90 mb-1">Amount (৳)</label>
+                <Input name="amount" type="number" min="0" step="0.01" defaultValue={editingDeposit.amount} className="bg-secondary focus-visible:ring-primary rounded-md" required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground/90 mb-1">Note (Optional)</label>
-                <Input name="note" type="text" defaultValue={editingDeposit.note || ""} placeholder="e.g., Cash, bKash" className="bg-secondary focus-visible:ring-primary rounded-xl" />
+                <label className="block text-sm font-light text-foreground/90 mb-1">Note (Optional)</label>
+                <Input name="note" type="text" defaultValue={editingDeposit.note || ""} placeholder="e.g., Cash, bKash" className="bg-secondary focus-visible:ring-primary rounded-md" />
               </div>
               <div className="pt-4 flex gap-3">
-                <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={() => setEditDepositModalOpen(false)}>Cancel</Button>
-                <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">Save Changes</Button>
+                <Button type="button" variant="outline" className="flex-1 rounded-md" onClick={() => setEditDepositModalOpen(false)}>Cancel</Button>
+                <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md">Save Changes</Button>
               </div>
             </form>
           )}
@@ -1124,7 +1124,7 @@ export default function App() {
       </Dialog>
 
       <Dialog open={isMemberModalOpen} onOpenChange={setMemberModalOpen}>
-        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-2xl">
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-lg">
           <DialogHeader>
             <DialogTitle>Add Member</DialogTitle>
           </DialogHeader>
@@ -1144,29 +1144,29 @@ export default function App() {
             }
           }}>
             <div>
-              <label className="block text-sm font-medium text-foreground/90 mb-1">Name</label>
-              <Input name="name" type="text" className="bg-secondary focus-visible:ring-primary rounded-xl" required />
+              <label className="block text-sm font-light text-foreground/90 mb-1">Name</label>
+              <Input name="name" type="text" className="bg-secondary focus-visible:ring-primary rounded-md" required />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground/90 mb-1">Phone</label>
-              <Input name="phone" type="text" className="bg-secondary focus-visible:ring-primary rounded-xl" />
+              <label className="block text-sm font-light text-foreground/90 mb-1">Phone</label>
+              <Input name="phone" type="text" className="bg-secondary focus-visible:ring-primary rounded-md" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground/90 mb-1">Entry Date</label>
-              <Input name="entry_date" type="date" defaultValue={today} className="bg-secondary focus-visible:ring-primary rounded-xl" required />
+              <label className="block text-sm font-light text-foreground/90 mb-1">Entry Date</label>
+              <Input name="entry_date" type="date" defaultValue={today} className="bg-secondary focus-visible:ring-primary rounded-md" required />
             </div>
             <div className="pt-4 flex gap-3">
-              <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={() => setMemberModalOpen(false)}>Cancel</Button>
-              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">Add Member</Button>
+              <Button type="button" variant="outline" className="flex-1 rounded-md" onClick={() => setMemberModalOpen(false)}>Cancel</Button>
+              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md">Add Member</Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isShareModalOpen} onOpenChange={setShareModalOpen}>
-        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-2xl p-6">
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-lg p-6">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+            <DialogTitle className="text-xl font-light text-foreground flex items-center gap-2">
               <Share2 className="text-primary" size={20} />
               Share MessSync
             </DialogTitle>
@@ -1178,13 +1178,13 @@ export default function App() {
             </p>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Access Link</label>
+              <label className="text-xs font-normal text-muted-foreground uppercase tracking-wider">Access Link</label>
               <div className="flex gap-2">
                 <Input
                   type="text"
                   value={shareUrl || "Loading link..."}
                   readOnly
-                  className="flex-1 bg-secondary border-border text-foreground/90 font-medium rounded-xl select-all"
+                  className="flex-1 bg-secondary border-border text-foreground/90 font-light rounded-md select-all"
                 />
                 <Button
                   onClick={async () => {
@@ -1197,7 +1197,7 @@ export default function App() {
                       console.error("Failed to copy link", err);
                     }
                   }}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-4 flex items-center gap-1.5 shrink-0 transition-all cursor-pointer"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md px-4 flex items-center gap-1.5 shrink-0 transition-all cursor-pointer"
                 >
                   {copied ? <Check size={16} /> : <Copy size={16} />}
                   {copied ? "Copied!" : "Copy"}
@@ -1205,9 +1205,9 @@ export default function App() {
               </div>
             </div>
 
-            <div className="flex flex-col items-center justify-center bg-secondary/50 rounded-2xl p-6 border border-border/50 space-y-4">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Scan to Open on Mobile</span>
-              <div className="bg-white p-3 rounded-2xl border border-border/50 flex items-center justify-center">
+            <div className="flex flex-col items-center justify-center bg-secondary/50 rounded-lg p-6 border border-border/50 space-y-4">
+              <span className="text-xs font-normal text-muted-foreground uppercase tracking-wider">Scan to Open on Mobile</span>
+              <div className="bg-white p-3 rounded-lg border border-border/50 flex items-center justify-center">
                 {shareUrl ? (
                   <canvas ref={qrCanvasRef} className="w-48 h-48 rounded-lg" />
                 ) : (
@@ -1225,7 +1225,7 @@ export default function App() {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full rounded-xl border-border hover:bg-secondary text-foreground/80 transition-colors cursor-pointer"
+                className="w-full rounded-md border-border hover:bg-secondary text-foreground/80 transition-colors cursor-pointer"
                 onClick={() => setShareModalOpen(false)}
               >
                 Close
@@ -1238,14 +1238,14 @@ export default function App() {
       {/* Toast Notification System */}
       {toastMessage && (
         <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
-          <div className={`rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border p-4 pr-12 min-w-[300px] flex gap-3 backdrop-blur-md ${
+          <div className={`rounded-md shadow-[0_8px_30px_rgb(0,0,0,0.12)] border p-4 pr-12 min-w-[300px] flex gap-3 backdrop-blur-md ${
             toastMessage.type === 'success' ? 'bg-card/90 border-primary/20 text-foreground' : 'bg-card/90 border-red-200 text-foreground'
           }`}>
-            <div className={`mt-0.5 rounded-full p-1 h-fit shrink-0 ${toastMessage.type === 'success' ? 'bg-primary/15 text-primary' : 'bg-destructive/15 text-destructive'}`}>
+            <div className={`mt-0.5 rounded-md p-1 h-fit shrink-0 ${toastMessage.type === 'success' ? 'bg-primary/15 text-primary' : 'bg-destructive/15 text-destructive'}`}>
               {toastMessage.type === 'success' ? <Check size={14} /> : <X size={14} />}
             </div>
             <div>
-              <p className="font-semibold text-sm">{toastMessage.title}</p>
+              <p className="font-normal text-sm">{toastMessage.title}</p>
               {toastMessage.message && <p className="text-xs text-muted-foreground mt-0.5">{toastMessage.message}</p>}
             </div>
             <button 
