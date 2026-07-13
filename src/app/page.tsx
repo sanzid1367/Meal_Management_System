@@ -95,6 +95,8 @@ export default function App() {
 
   // Modals
   const [isExpenseModalOpen, setExpenseModalOpen] = useState(false);
+  const [isEditExpenseModalOpen, setEditExpenseModalOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isDepositModalOpen, setDepositModalOpen] = useState(false);
   const [isEditDepositModalOpen, setEditDepositModalOpen] = useState(false);
   const [editingDeposit, setEditingDeposit] = useState<Deposit | null>(null);
@@ -110,7 +112,9 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<{title: string, message?: string, type: 'success' | 'error'} | null>(null);
   const [updatingMembers, setUpdatingMembers] = useState<Record<number, boolean>>({});
   const [deletingDeposits, setDeletingDeposits] = useState<Record<number, boolean>>({});
+  const [deletingExpenses, setDeletingExpenses] = useState<Record<number, boolean>>({});
   const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
+  const [isUpdatingExpense, setIsUpdatingExpense] = useState(false);
   const [isSubmittingDeposit, setIsSubmittingDeposit] = useState(false);
   const [isUpdatingDeposit, setIsUpdatingDeposit] = useState(false);
   const [isSubmittingMember, setIsSubmittingMember] = useState(false);
@@ -206,6 +210,7 @@ export default function App() {
   }
 
   async function saveMealGrid() {
+    if (isSavingMeals) return;
     setIsSavingMeals(true);
     const entries = activeMembers.flatMap((member) =>
       (["lunch", "dinner"] as const).map((meal_type) => ({
@@ -418,6 +423,7 @@ export default function App() {
                       size="sm"
                       disabled={updatingMembers[member.id]}
                       onClick={async () => {
+                        if (updatingMembers[member.id]) return;
                         if (member.is_active) {
                           if (!confirm(`Are you sure you want to drop ${member.name}? They will be marked as inactive.`)) return;
                         }
@@ -588,6 +594,7 @@ export default function App() {
                 <th className="p-4 font-light">Description</th>
                 <th className="p-4 font-light">Shopper</th>
                 <th className="p-4 font-light text-right">Amount</th>
+                {isAdmin && <th className="p-4 font-light text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -612,6 +619,53 @@ export default function App() {
                     </span>
                   </td>
                   <td className="p-4 font-light text-foreground text-right font-mono">৳{exp.amount.toLocaleString()}</td>
+                  {isAdmin && (
+                    <td className="p-4 text-right whitespace-nowrap">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingExpense(exp);
+                            setEditExpenseModalOpen(true);
+                          }}
+                        >
+                          <Pencil size={15} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={deletingExpenses[exp.id]}
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-lg cursor-pointer"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (deletingExpenses[exp.id]) return;
+                            if (confirm(`Are you sure you want to delete this expense of ৳${exp.amount} for "${exp.description}"?`)) {
+                              setDeletingExpenses(prev => ({ ...prev, [exp.id]: true }));
+                              try {
+                                await api.deleteExpense(exp.id);
+                                await loadAll();
+                                showToast("Expense Deleted", "The expense was deleted successfully.");
+                              } catch (err) {
+                                console.error(err);
+                                showToast("Error", "Failed to delete expense.", "error");
+                              } finally {
+                                setDeletingExpenses(prev => ({ ...prev, [exp.id]: false }));
+                              }
+                            }
+                          }}
+                        >
+                          {deletingExpenses[exp.id] ? (
+                            <Loader2 className="animate-spin" size={15} />
+                          ) : (
+                            <Trash2 size={15} />
+                          )}
+                        </Button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -620,6 +674,7 @@ export default function App() {
                 <td className="p-4">Total</td>
                 <td className="p-4" colSpan={2}></td>
                 <td className="p-4 text-right font-mono">৳{totalExpensesSum.toLocaleString()}</td>
+                {isAdmin && <td className="p-4"></td>}
               </tr>
             </tfoot>
           </table>
@@ -694,6 +749,7 @@ export default function App() {
                             className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-lg cursor-pointer"
                             onClick={async (e) => {
                               e.stopPropagation();
+                              if (deletingDeposits[dep.id]) return;
                               if (confirm(`Are you sure you want to delete this deposit of ৳${dep.amount} for ${dep.member_name}?`)) {
                                 setDeletingDeposits(prev => ({ ...prev, [dep.id]: true }));
                                 try {
@@ -743,6 +799,7 @@ export default function App() {
         <Button 
           disabled={isExportingCSV}
           onClick={async () => {
+            if (isExportingCSV) return;
             setIsExportingCSV(true);
             try {
               const res = await fetch('/api/export/summary.csv');
@@ -910,6 +967,7 @@ export default function App() {
               <Button 
                 disabled={isClosingMonth} 
                 onClick={async () => {
+                  if (isClosingMonth) return;
                   if (confirm('Are you sure you want to close this month?')) {
                     setIsClosingMonth(true);
                     try {
@@ -993,8 +1051,11 @@ export default function App() {
           <DialogHeader>
             <DialogTitle>Add Daily Expense</DialogTitle>
           </DialogHeader>
-          <form className="space-y-4 mt-4" action={async (formData: FormData) => {
+          <form className="space-y-4 mt-4" onSubmit={async (e) => {
+            e.preventDefault();
+            if (isSubmittingExpense) return;
             setIsSubmittingExpense(true);
+            const formData = new FormData(e.currentTarget);
             try {
               await api.createExpense({
                 date: formData.get("date") as string,
@@ -1051,8 +1112,11 @@ export default function App() {
           <DialogHeader>
             <DialogTitle>Add Member Deposit</DialogTitle>
           </DialogHeader>
-          <form className="space-y-4 mt-4" action={async (formData: FormData) => {
+          <form className="space-y-4 mt-4" onSubmit={async (e) => {
+            e.preventDefault();
+            if (isSubmittingDeposit) return;
             setIsSubmittingDeposit(true);
+            const formData = new FormData(e.currentTarget);
             try {
               await api.createDeposit({
                 date: formData.get("date") as string,
@@ -1100,14 +1164,80 @@ export default function App() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={isEditExpenseModalOpen} onOpenChange={setEditExpenseModalOpen}>
+        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Daily Expense</DialogTitle>
+          </DialogHeader>
+          {editingExpense && (
+            <form className="space-y-4 mt-4" onSubmit={async (e) => {
+              e.preventDefault();
+              if (isUpdatingExpense) return;
+              setIsUpdatingExpense(true);
+              const formData = new FormData(e.currentTarget);
+              try {
+                await api.updateExpense(editingExpense.id, {
+                  date: formData.get("date") as string,
+                  amount: Number(formData.get("amount")),
+                  description: formData.get("description") as string,
+                  shopper_member_id: Number(formData.get("shopper_member_id")) || null
+                });
+                setEditExpenseModalOpen(false);
+                await loadAll();
+                showToast("Expense Updated", "The expense was updated successfully.");
+              } catch (err) {
+                console.error(err);
+                showToast("Error", "Failed to update expense.", "error");
+              } finally {
+                setIsUpdatingExpense(false);
+              }
+            }}>
+              <div>
+                <label className="block text-sm font-light text-foreground/90 mb-1">Date</label>
+                <Input name="date" type="date" defaultValue={editingExpense.date} className="bg-secondary focus-visible:ring-primary rounded-md" required />
+              </div>
+              <div>
+                <label className="block text-sm font-light text-foreground/90 mb-1">Amount (৳)</label>
+                <Input name="amount" type="number" min="0" step="0.01" defaultValue={editingExpense.amount} className="bg-secondary focus-visible:ring-primary rounded-md" required />
+              </div>
+              <div>
+                <label className="block text-sm font-light text-foreground/90 mb-1">Items Description</label>
+                <Input name="description" type="text" defaultValue={editingExpense.description} className="bg-secondary focus-visible:ring-primary rounded-md" required />
+              </div>
+              <div>
+                <label className="block text-sm font-light text-foreground/90 mb-1">Purchased By</label>
+                <Select name="shopper_member_id" defaultValue={editingExpense.shopper_member_id?.toString() || undefined}>
+                  <SelectTrigger className="bg-secondary focus-visible:ring-primary rounded-md">
+                    <SelectValue placeholder="Select Shopper..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeMembers.map(m => <SelectItem key={m.id} value={m.id.toString()}>{m.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="pt-4 flex gap-3">
+                <Button type="button" variant="outline" className="flex-1 rounded-md" onClick={() => setEditExpenseModalOpen(false)} disabled={isUpdatingExpense}>Cancel</Button>
+                <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md flex items-center justify-center gap-1.5" disabled={isUpdatingExpense}>
+                  {isUpdatingExpense && <Loader2 className="animate-spin" size={16} />}
+                  {isUpdatingExpense ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isEditDepositModalOpen} onOpenChange={setEditDepositModalOpen}>
         <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border rounded-lg">
           <DialogHeader>
             <DialogTitle>Edit Member Deposit</DialogTitle>
           </DialogHeader>
           {editingDeposit && (
-            <form className="space-y-4 mt-4" action={async (formData: FormData) => {
+            <form className="space-y-4 mt-4" onSubmit={async (e) => {
+              e.preventDefault();
+              if (isUpdatingDeposit) return;
               setIsUpdatingDeposit(true);
+              const formData = new FormData(e.currentTarget);
               try {
                 await api.updateDeposit(editingDeposit.id, {
                   date: formData.get("date") as string,
@@ -1165,8 +1295,11 @@ export default function App() {
           <DialogHeader>
             <DialogTitle>Add Member</DialogTitle>
           </DialogHeader>
-          <form className="space-y-4 mt-4" action={async (formData: FormData) => {
+          <form className="space-y-4 mt-4" onSubmit={async (e) => {
+            e.preventDefault();
+            if (isSubmittingMember) return;
             setIsSubmittingMember(true);
+            const formData = new FormData(e.currentTarget);
             try {
               await api.createMember({
                 name: formData.get("name") as string,

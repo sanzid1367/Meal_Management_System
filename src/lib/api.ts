@@ -50,6 +50,8 @@ export const api = {
     request<Expense>("/api/expenses", { method: "POST", body: JSON.stringify(data) }),
   updateExpense: (id: number, data: Partial<Expense>) =>
     request<Expense>(`/api/expenses/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteExpense: (id: number) =>
+    request<{ success: boolean }>(`/api/expenses/${id}`, { method: "DELETE" }),
   meals: (start: string, end: string) => request<MealEntry[]>(`/api/meals?start=${start}&end=${end}`),
   saveMeals: (entries: Array<Omit<MealEntry, "id">>) =>
     request<{ updated: number }>("/api/meals", { method: "PUT", body: JSON.stringify({ entries }) }),

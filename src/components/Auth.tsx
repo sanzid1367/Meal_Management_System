@@ -11,6 +11,7 @@ export function Auth({ onLogin }: { onLogin: (user: any) => void }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setError('');
     setLoading(true);
     try {

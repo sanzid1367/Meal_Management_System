@@ -63,3 +63,34 @@ export async function PATCH(
     return NextResponse.json({ detail: error.message || "Failed to update expense" }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: Request,
+  context: { params: { id: string } | Promise<{ id: string }> }
+) {
+  try {
+    await initDb();
+    const adminUser = await requireAdmin(request);
+    if (!adminUser) {
+      return NextResponse.json({ detail: "Not enough permissions" }, { status: 403 });
+    }
+
+    const { id } = await context.params;
+    const expenseId = parseInt(id);
+
+    const currentList = await sql`
+      SELECT id FROM expenses WHERE id = ${expenseId} LIMIT 1
+    `;
+    if (currentList.length === 0) {
+      return NextResponse.json({ detail: "Expense not found" }, { status: 404 });
+    }
+
+    await sql`
+      DELETE FROM expenses WHERE id = ${expenseId}
+    `;
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ detail: error.message || "Failed to delete expense" }, { status: 500 });
+  }
+}
