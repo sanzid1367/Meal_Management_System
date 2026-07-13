@@ -108,6 +108,13 @@ export default function App() {
   const [isSavingMeals, setIsSavingMeals] = useState(false);
   const [isClosingMonth, setIsClosingMonth] = useState(false);
   const [toastMessage, setToastMessage] = useState<{title: string, message?: string, type: 'success' | 'error'} | null>(null);
+  const [updatingMembers, setUpdatingMembers] = useState<Record<number, boolean>>({});
+  const [deletingDeposits, setDeletingDeposits] = useState<Record<number, boolean>>({});
+  const [isSubmittingExpense, setIsSubmittingExpense] = useState(false);
+  const [isSubmittingDeposit, setIsSubmittingDeposit] = useState(false);
+  const [isUpdatingDeposit, setIsUpdatingDeposit] = useState(false);
+  const [isSubmittingMember, setIsSubmittingMember] = useState(false);
+  const [isExportingCSV, setIsExportingCSV] = useState(false);
 
   const showToast = (title: string, message?: string, type: 'success' | 'error' = 'success') => {
     setToastMessage({ title, message, type });
@@ -355,18 +362,14 @@ export default function App() {
   const MembersView = () => (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex justify-end items-center mb-6 shrink-0">
-        <Button 
-          onClick={() => {
-            if (isAdmin) {
-              setMemberModalOpen(true);
-            } else {
-              showToast("Admin Login Required", "Please sign in as an admin to add members.", "error");
-            }
-          }} 
-          className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md cursor-pointer flex items-center gap-2"
-        >
-          {isAdmin ? <Plus size={18} /> : <Lock size={16} />} Add Member
-        </Button>
+        {isAdmin && (
+          <Button 
+            onClick={() => setMemberModalOpen(true)} 
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md cursor-pointer flex items-center gap-2"
+          >
+            <Plus size={18} /> Add Member
+          </Button>
+        )}
       </div>
 
       <div className="bg-card/60 backdrop-blur-md border border-border rounded-lg overflow-x-auto">
@@ -413,15 +416,24 @@ export default function App() {
                     <Button 
                       variant="outline" 
                       size="sm"
+                      disabled={updatingMembers[member.id]}
                       onClick={async () => {
                         if (member.is_active) {
                           if (!confirm(`Are you sure you want to drop ${member.name}? They will be marked as inactive.`)) return;
                         }
-                        await api.updateMember(member.id, { is_active: member.is_active ? 0 : 1 });
-                        loadAll();
+                        setUpdatingMembers(prev => ({ ...prev, [member.id]: true }));
+                        try {
+                          await api.updateMember(member.id, { is_active: member.is_active ? 0 : 1 });
+                          await loadAll();
+                        } catch (err) {
+                          showToast("Error", "Failed to update member.", "error");
+                        } finally {
+                          setUpdatingMembers(prev => ({ ...prev, [member.id]: false }));
+                        }
                       }} 
                       className={`text-xs rounded-lg transition-colors cursor-pointer ${member.is_active ? 'text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20' : 'text-primary hover:bg-primary/10 hover:text-primary/90 border-primary/20'}`}
                     >
+                      {updatingMembers[member.id] && <Loader2 className="animate-spin mr-1.5" size={12} />}
                       {member.is_active ? 'Drop Member' : 'Restore Member'}
                     </Button>
                   </td>
@@ -441,19 +453,15 @@ export default function App() {
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col flex-1 min-h-0">
         <div className="flex justify-end items-center gap-2 mb-6 shrink-0">
           <Input type="date" value={mealDate} onChange={e => setMealDate(e.target.value)} className="w-auto bg-card/60" />
-          <Button 
-            disabled={isAdmin && isSavingMeals} 
-            onClick={() => {
-              if (isAdmin) {
-                saveMealGrid();
-              } else {
-                showToast("Admin Login Required", "Please sign in as an admin to edit and save meals.", "error");
-              }
-            }} 
-            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md transition-all disabled:opacity-70 cursor-pointer flex items-center gap-2"
-          >
-            {isAdmin ? (isSavingMeals ? <Loader2 className="animate-spin" size={16} /> : 'Save') : <><Lock size={16} /> Save</>}
-          </Button>
+          {isAdmin && (
+            <Button 
+              disabled={isSavingMeals} 
+              onClick={saveMealGrid} 
+              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md transition-all disabled:opacity-70 cursor-pointer flex items-center gap-2"
+            >
+              {isSavingMeals ? <Loader2 className="animate-spin" size={16} /> : 'Save'}
+            </Button>
+          )}
         </div>
 
         <div className="bg-card/60 backdrop-blur-md border border-border rounded-lg flex-1 overflow-hidden flex flex-col">
@@ -562,18 +570,14 @@ export default function App() {
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex justify-end items-center mb-6 shrink-0">
-          <Button 
-            onClick={() => {
-              if (isAdmin) {
-                setExpenseModalOpen(true);
-              } else {
-                showToast("Admin Login Required", "Please sign in as an admin to record expenses.", "error");
-              }
-            }} 
-            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md cursor-pointer flex items-center gap-2"
-          >
-            {isAdmin ? <Plus size={18} /> : <Lock size={16} />} Add Expense
-          </Button>
+          {isAdmin && (
+            <Button 
+              onClick={() => setExpenseModalOpen(true)} 
+              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md cursor-pointer flex items-center gap-2"
+            >
+              <Plus size={18} /> Add Expense
+            </Button>
+          )}
         </div>
 
         <div className="bg-card/60 backdrop-blur-md border border-border rounded-lg overflow-hidden">
@@ -629,18 +633,14 @@ export default function App() {
     return (
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex justify-end items-center mb-6 shrink-0">
-          <Button 
-            onClick={() => {
-              if (isAdmin) {
-                setDepositModalOpen(true);
-              } else {
-                showToast("Admin Login Required", "Please sign in as an admin to add deposits.", "error");
-              }
-            }} 
-            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md cursor-pointer flex items-center gap-2"
-          >
-            {isAdmin ? <Plus size={18} /> : <Lock size={16} />} Add Deposit
-          </Button>
+          {isAdmin && (
+            <Button 
+              onClick={() => setDepositModalOpen(true)} 
+              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md cursor-pointer flex items-center gap-2"
+            >
+              <Plus size={18} /> Add Deposit
+            </Button>
+          )}
         </div>
 
         <div className="bg-card/60 backdrop-blur-md border border-border rounded-lg overflow-hidden">
@@ -679,7 +679,8 @@ export default function App() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setEditingDeposit(dep);
                               setEditDepositModalOpen(true);
                             }}
@@ -689,9 +690,12 @@ export default function App() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            disabled={deletingDeposits[dep.id]}
                             className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-lg cursor-pointer"
-                            onClick={async () => {
+                            onClick={async (e) => {
+                              e.stopPropagation();
                               if (confirm(`Are you sure you want to delete this deposit of ৳${dep.amount} for ${dep.member_name}?`)) {
+                                setDeletingDeposits(prev => ({ ...prev, [dep.id]: true }));
                                 try {
                                   await api.deleteDeposit(dep.id);
                                   await loadAll();
@@ -699,11 +703,17 @@ export default function App() {
                                 } catch (err) {
                                   console.error(err);
                                   showToast("Error", "Failed to delete deposit.", "error");
+                                } finally {
+                                  setDeletingDeposits(prev => ({ ...prev, [dep.id]: false }));
                                 }
                               }
                             }}
                           >
-                            <Trash2 size={15} />
+                            {deletingDeposits[dep.id] ? (
+                              <Loader2 className="animate-spin" size={15} />
+                            ) : (
+                              <Trash2 size={15} />
+                            )}
                           </Button>
                         </div>
                       </td>
@@ -730,25 +740,37 @@ export default function App() {
   const ReportsView = () => (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col h-full">
       <div className="flex justify-end items-center mb-6 shrink-0">
-        <Button onClick={async () => {
-          try {
-            const res = await fetch('/api/export/summary.csv');
-            if (!res.ok) throw new Error("Failed to export CSV");
-            const blob = await res.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `mess-summary-${monthLabel}.csv`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-          } catch (err) {
-            console.error("Export failed", err);
-            alert("Failed to export CSV");
-          }
-        }} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md">
-          <FileText size={18} className="mr-2" /> Export CSV
+        <Button 
+          disabled={isExportingCSV}
+          onClick={async () => {
+            setIsExportingCSV(true);
+            try {
+              const res = await fetch('/api/export/summary.csv');
+              if (!res.ok) throw new Error("Failed to export CSV");
+              const blob = await res.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `mess-summary-${monthLabel}.csv`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              window.URL.revokeObjectURL(url);
+            } catch (err) {
+              console.error("Export failed", err);
+              alert("Failed to export CSV");
+            } finally {
+              setIsExportingCSV(false);
+            }
+          }} 
+          className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md flex items-center gap-1.5"
+        >
+          {isExportingCSV ? (
+            <Loader2 className="animate-spin" size={18} />
+          ) : (
+            <FileText size={18} />
+          )}
+          <span>Export CSV</span>
         </Button>
       </div>
 
@@ -879,38 +901,35 @@ export default function App() {
           <SidebarItem id="reports" icon={FileText} label="Reports" />
         </nav>
 
-        <div className="p-4">
-          <div className="bg-gradient-to-br from-primary to-primary/80 rounded-lg p-5 text-white relative overflow-hidden">
-            <div className="absolute -right-4 -top-4 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
-            <p className="text-xs text-white/80 font-light mb-1">Month End</p>
-            <h4 className="font-light text-sm mb-3">Close {monthLabel} &<br />Generate PDF</h4>
-            <Button 
-              disabled={isAdmin && isClosingMonth} 
-              onClick={async () => {
-                if (!isAdmin) {
-                  showToast("Admin Login Required", "Please sign in as an admin to close the month.", "error");
-                  return;
-                }
-                if (confirm('Are you sure you want to close this month?')) {
-                  setIsClosingMonth(true);
-                  try {
-                    await api.closeMonth();
-                    await loadAll();
-                    showToast("Month Closed", "A new month has been started.");
-                  } catch (err) {
-                    showToast("Error", "Failed to close month.", "error");
-                  } finally {
-                    setIsClosingMonth(false);
+        {isAdmin && (
+          <div className="p-4">
+            <div className="bg-gradient-to-br from-primary to-primary/80 rounded-lg p-5 text-white relative overflow-hidden">
+              <div className="absolute -right-4 -top-4 w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
+              <p className="text-xs text-white/80 font-light mb-1">Month End</p>
+              <h4 className="font-light text-sm mb-3">Close {monthLabel} &<br />Generate PDF</h4>
+              <Button 
+                disabled={isClosingMonth} 
+                onClick={async () => {
+                  if (confirm('Are you sure you want to close this month?')) {
+                    setIsClosingMonth(true);
+                    try {
+                      await api.closeMonth();
+                      await loadAll();
+                      showToast("Month Closed", "A new month has been started.");
+                    } catch (err) {
+                      showToast("Error", "Failed to close month.", "error");
+                    } finally {
+                      setIsClosingMonth(false);
+                    }
                   }
-                }
-              }} 
-              className="bg-primary-foreground text-primary text-xs font-light w-full hover:bg-primary/10 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
-            >
-              {!isAdmin && <Lock size={12} />}
-              {isClosingMonth && isAdmin ? <><Loader2 className="animate-spin" size={12} /> Closing...</> : 'Close Month'}
-            </Button>
+                }} 
+                className="bg-primary-foreground text-primary text-xs font-light w-full hover:bg-primary/10 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {isClosingMonth ? <><Loader2 className="animate-spin" size={12} /> Closing...</> : 'Close Month'}
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </aside>
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden z-10">
@@ -975,7 +994,7 @@ export default function App() {
             <DialogTitle>Add Daily Expense</DialogTitle>
           </DialogHeader>
           <form className="space-y-4 mt-4" action={async (formData: FormData) => {
-            setExpenseModalOpen(false); // Optimistically close modal
+            setIsSubmittingExpense(true);
             try {
               await api.createExpense({
                 date: formData.get("date") as string,
@@ -983,11 +1002,14 @@ export default function App() {
                 description: formData.get("description") as string,
                 shopper_member_id: Number(formData.get("shopper_member_id")) || null
               });
+              setExpenseModalOpen(false);
               await loadAll();
               showToast("Expense Added", "The expense was recorded successfully.");
             } catch (err) {
               console.error(err);
               showToast("Error", "Failed to record expense.", "error");
+            } finally {
+              setIsSubmittingExpense(false);
             }
           }}>
             <div>
@@ -1014,8 +1036,11 @@ export default function App() {
               </Select>
             </div>
             <div className="pt-4 flex gap-3">
-              <Button type="button" variant="outline" className="flex-1 rounded-md" onClick={() => setExpenseModalOpen(false)}>Cancel</Button>
-              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md">Save Expense</Button>
+              <Button type="button" variant="outline" className="flex-1 rounded-md" onClick={() => setExpenseModalOpen(false)} disabled={isSubmittingExpense}>Cancel</Button>
+              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md flex items-center justify-center gap-1.5" disabled={isSubmittingExpense}>
+                {isSubmittingExpense && <Loader2 className="animate-spin" size={16} />}
+                {isSubmittingExpense ? 'Saving...' : 'Save Expense'}
+              </Button>
             </div>
           </form>
         </DialogContent>
@@ -1027,7 +1052,7 @@ export default function App() {
             <DialogTitle>Add Member Deposit</DialogTitle>
           </DialogHeader>
           <form className="space-y-4 mt-4" action={async (formData: FormData) => {
-            setDepositModalOpen(false); // Optimistically close
+            setIsSubmittingDeposit(true);
             try {
               await api.createDeposit({
                 date: formData.get("date") as string,
@@ -1035,11 +1060,14 @@ export default function App() {
                 member_id: Number(formData.get("member_id")),
                 note: ""
               });
+              setDepositModalOpen(false);
               await loadAll();
               showToast("Deposit Added", "Member deposit recorded successfully.");
             } catch (err) {
               console.error(err);
               showToast("Error", "Failed to add deposit.", "error");
+            } finally {
+              setIsSubmittingDeposit(false);
             }
           }}>
             <div>
@@ -1062,8 +1090,11 @@ export default function App() {
               <Input name="amount" type="number" min="0" step="0.01" placeholder="0.00" className="bg-secondary focus-visible:ring-primary rounded-md" required />
             </div>
             <div className="pt-4 flex gap-3">
-              <Button type="button" variant="outline" className="flex-1 rounded-md" onClick={() => setDepositModalOpen(false)}>Cancel</Button>
-              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md">Add Deposit</Button>
+              <Button type="button" variant="outline" className="flex-1 rounded-md" onClick={() => setDepositModalOpen(false)} disabled={isSubmittingDeposit}>Cancel</Button>
+              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md flex items-center justify-center gap-1.5" disabled={isSubmittingDeposit}>
+                {isSubmittingDeposit && <Loader2 className="animate-spin" size={16} />}
+                {isSubmittingDeposit ? 'Adding...' : 'Add Deposit'}
+              </Button>
             </div>
           </form>
         </DialogContent>
@@ -1076,7 +1107,7 @@ export default function App() {
           </DialogHeader>
           {editingDeposit && (
             <form className="space-y-4 mt-4" action={async (formData: FormData) => {
-              setEditDepositModalOpen(false); // Optimistically close
+              setIsUpdatingDeposit(true);
               try {
                 await api.updateDeposit(editingDeposit.id, {
                   date: formData.get("date") as string,
@@ -1084,11 +1115,14 @@ export default function App() {
                   member_id: Number(formData.get("member_id")),
                   note: (formData.get("note") as string) || ""
                 });
+                setEditDepositModalOpen(false);
                 await loadAll();
                 showToast("Deposit Updated", "Member deposit updated successfully.");
               } catch (err) {
                 console.error(err);
                 showToast("Error", "Failed to update deposit.", "error");
+              } finally {
+                setIsUpdatingDeposit(false);
               }
             }}>
               <div>
@@ -1115,8 +1149,11 @@ export default function App() {
                 <Input name="note" type="text" defaultValue={editingDeposit.note || ""} placeholder="e.g., Cash, bKash" className="bg-secondary focus-visible:ring-primary rounded-md" />
               </div>
               <div className="pt-4 flex gap-3">
-                <Button type="button" variant="outline" className="flex-1 rounded-md" onClick={() => setEditDepositModalOpen(false)}>Cancel</Button>
-                <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md">Save Changes</Button>
+                <Button type="button" variant="outline" className="flex-1 rounded-md" onClick={() => setEditDepositModalOpen(false)} disabled={isUpdatingDeposit}>Cancel</Button>
+                <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md flex items-center justify-center gap-1.5" disabled={isUpdatingDeposit}>
+                  {isUpdatingDeposit && <Loader2 className="animate-spin" size={16} />}
+                  {isUpdatingDeposit ? 'Saving...' : 'Save Changes'}
+                </Button>
               </div>
             </form>
           )}
@@ -1129,18 +1166,21 @@ export default function App() {
             <DialogTitle>Add Member</DialogTitle>
           </DialogHeader>
           <form className="space-y-4 mt-4" action={async (formData: FormData) => {
-            setMemberModalOpen(false); // Optimistically close
+            setIsSubmittingMember(true);
             try {
               await api.createMember({
                 name: formData.get("name") as string,
                 phone: formData.get("phone") as string,
                 entry_date: formData.get("entry_date") as string
               });
+              setMemberModalOpen(false);
               await loadAll();
               showToast("Member Added", "New mess member joined successfully.");
             } catch (err) {
               console.error(err);
               showToast("Error", "Failed to add member.", "error");
+            } finally {
+              setIsSubmittingMember(false);
             }
           }}>
             <div>
@@ -1156,8 +1196,11 @@ export default function App() {
               <Input name="entry_date" type="date" defaultValue={today} className="bg-secondary focus-visible:ring-primary rounded-md" required />
             </div>
             <div className="pt-4 flex gap-3">
-              <Button type="button" variant="outline" className="flex-1 rounded-md" onClick={() => setMemberModalOpen(false)}>Cancel</Button>
-              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md">Add Member</Button>
+              <Button type="button" variant="outline" className="flex-1 rounded-md" onClick={() => setMemberModalOpen(false)} disabled={isSubmittingMember}>Cancel</Button>
+              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md flex items-center justify-center gap-1.5" disabled={isSubmittingMember}>
+                {isSubmittingMember && <Loader2 className="animate-spin" size={16} />}
+                {isSubmittingMember ? 'Adding...' : 'Add Member'}
+              </Button>
             </div>
           </form>
         </DialogContent>
