@@ -172,6 +172,22 @@ export async function initDb() {
       );
     `;
 
+    // Automatic Column Migrations for Existing Tables
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS mess_id INTEGER REFERENCES messes(id) ON DELETE SET NULL;`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS member_id INTEGER;`;
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS mess_id INTEGER REFERENCES messes(id) ON DELETE CASCADE;`;
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS user_id INTEGER;`;
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS deactivated_at TEXT;`;
+    await sql`ALTER TABLE months ADD COLUMN IF NOT EXISTS mess_id INTEGER REFERENCES messes(id) ON DELETE CASCADE;`;
+    await sql`ALTER TABLE opening_balances ADD COLUMN IF NOT EXISTS mess_id INTEGER REFERENCES messes(id) ON DELETE CASCADE;`;
+    await sql`ALTER TABLE deposits ADD COLUMN IF NOT EXISTS mess_id INTEGER REFERENCES messes(id) ON DELETE CASCADE;`;
+    await sql`ALTER TABLE expenses ADD COLUMN IF NOT EXISTS mess_id INTEGER REFERENCES messes(id) ON DELETE CASCADE;`;
+    await sql`ALTER TABLE expenses ADD COLUMN IF NOT EXISTS shopper_member_id INTEGER REFERENCES members(id) ON DELETE SET NULL;`;
+    await sql`ALTER TABLE meal_entries ADD COLUMN IF NOT EXISTS mess_id INTEGER REFERENCES messes(id) ON DELETE CASCADE;`;
+    await sql`ALTER TABLE meal_entries ADD COLUMN IF NOT EXISTS guest_count NUMERIC NOT NULL DEFAULT 0;`;
+    await sql`ALTER TABLE bazar_schedule ADD COLUMN IF NOT EXISTS mess_id INTEGER REFERENCES messes(id) ON DELETE CASCADE;`;
+    await sql`ALTER TABLE month_closings ADD COLUMN IF NOT EXISTS mess_id INTEGER REFERENCES messes(id) ON DELETE CASCADE;`;
+
     // Ensure unique indexes for ON CONFLICT resolution
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_opening_balances_uniq ON opening_balances (member_id, month_id);`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_meal_entries_uniq ON meal_entries (month_id, member_id, date, meal_type);`;
@@ -193,6 +209,19 @@ export async function initDb() {
         RETURNING id
       `;
       defaultMessId = newMess[0].id;
+    }
+
+    // Backfill any existing records without mess_id
+    if (defaultMessId) {
+      await sql`UPDATE users SET mess_id = ${defaultMessId} WHERE mess_id IS NULL;`;
+      await sql`UPDATE members SET mess_id = ${defaultMessId} WHERE mess_id IS NULL;`;
+      await sql`UPDATE months SET mess_id = ${defaultMessId} WHERE mess_id IS NULL;`;
+      await sql`UPDATE opening_balances SET mess_id = ${defaultMessId} WHERE mess_id IS NULL;`;
+      await sql`UPDATE deposits SET mess_id = ${defaultMessId} WHERE mess_id IS NULL;`;
+      await sql`UPDATE expenses SET mess_id = ${defaultMessId} WHERE mess_id IS NULL;`;
+      await sql`UPDATE meal_entries SET mess_id = ${defaultMessId} WHERE mess_id IS NULL;`;
+      await sql`UPDATE bazar_schedule SET mess_id = ${defaultMessId} WHERE mess_id IS NULL;`;
+      await sql`UPDATE month_closings SET mess_id = ${defaultMessId} WHERE mess_id IS NULL;`;
     }
 
     // Seed default super admin if no admin exists
