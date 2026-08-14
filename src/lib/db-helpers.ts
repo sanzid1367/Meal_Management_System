@@ -52,20 +52,40 @@ export async function getActiveMonth(messId?: number): Promise<Month> {
       };
     }
 
-    // Insert new month for this mess
-    const insert = await sql<Month[]>`
-      INSERT INTO months (mess_id, name, start_date, is_active)
-      VALUES (${targetMessId}, ${monthName}, ${startDate}, 1)
-      RETURNING id, mess_id, name, start_date, closed_at, is_active
-    `;
-    return {
-      id: Number(insert[0].id),
-      mess_id: Number(insert[0].mess_id),
-      name: insert[0].name,
-      start_date: insert[0].start_date,
-      closed_at: insert[0].closed_at,
-      is_active: 1
-    };
+    // Insert new month for this mess (or recover if concurrently inserted)
+    try {
+      const insert = await sql<Month[]>`
+        INSERT INTO months (mess_id, name, start_date, is_active)
+        VALUES (${targetMessId}, ${monthName}, ${startDate}, 1)
+        RETURNING id, mess_id, name, start_date, closed_at, is_active
+      `;
+      return {
+        id: Number(insert[0].id),
+        mess_id: Number(insert[0].mess_id),
+        name: insert[0].name,
+        start_date: insert[0].start_date,
+        closed_at: insert[0].closed_at,
+        is_active: 1
+      };
+    } catch (insertErr) {
+      const fallback = await sql<Month[]>`
+        SELECT id, mess_id, name, start_date, closed_at, is_active
+        FROM months
+        WHERE mess_id = ${targetMessId} AND name = ${monthName}
+        LIMIT 1
+      `;
+      if (fallback.length > 0) {
+        return {
+          id: Number(fallback[0].id),
+          mess_id: Number(fallback[0].mess_id),
+          name: fallback[0].name,
+          start_date: fallback[0].start_date,
+          closed_at: fallback[0].closed_at,
+          is_active: 1
+        };
+      }
+      throw insertErr;
+    }
   }
   return {
     id: Number(active[0].id),

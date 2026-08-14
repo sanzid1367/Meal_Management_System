@@ -188,7 +188,16 @@ export async function initDb() {
     await sql`ALTER TABLE bazar_schedule ADD COLUMN IF NOT EXISTS mess_id INTEGER REFERENCES messes(id) ON DELETE CASCADE;`;
     await sql`ALTER TABLE month_closings ADD COLUMN IF NOT EXISTS mess_id INTEGER REFERENCES messes(id) ON DELETE CASCADE;`;
 
+    // Drop single-tenant unique constraints that conflict with multi-tenancy
+    try {
+      await sql`ALTER TABLE months DROP CONSTRAINT IF EXISTS months_name_key;`;
+      await sql`ALTER TABLE months DROP CONSTRAINT IF EXISTS months_name_unique;`;
+    } catch (e) {
+      console.warn("Could not drop old months_name_key constraint:", e);
+    }
+
     // Ensure unique indexes for ON CONFLICT resolution
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_months_mess_name_uniq ON months (mess_id, name);`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_opening_balances_uniq ON opening_balances (member_id, month_id);`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_meal_entries_uniq ON meal_entries (month_id, member_id, date, meal_type);`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_bazar_schedule_uniq ON bazar_schedule (month_id, date);`;
