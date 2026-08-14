@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Home, Users, Utensils, Receipt, Wallet, Calendar,
   Plus, ChevronRight, X, FileText, CalendarDays, Share2, Copy, Check, Loader2, Menu,
@@ -75,7 +77,16 @@ export default function App() {
   const isMember = user?.role === 'member';
   const isAdmin = isManager; // Backward compatibility
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'members' | 'meals' | 'expenses' | 'deposits' | 'schedule' | 'reports' | 'messes'>('dashboard');
+  const pathname = usePathname();
+  const router = useRouter();
+  const currentTab = useMemo<'dashboard' | 'members' | 'meals' | 'expenses' | 'deposits' | 'schedule' | 'reports' | 'messes'>(() => {
+    if (!pathname || pathname === '/') return 'dashboard';
+    const clean = pathname.replace(/^\//, '').split('/')[0];
+    if (['dashboard', 'members', 'meals', 'expenses', 'deposits', 'schedule', 'reports', 'messes'].includes(clean)) {
+      return clean as any;
+    }
+    return 'dashboard';
+  }, [pathname]);
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -428,9 +439,9 @@ export default function App() {
               <h2 className="text-4xl font-light font-mono">{summary?.totals.total_meals.toFixed(1) || 0}</h2>
             </div>
             <div className="mt-4">
-              <button onClick={() => setActiveTab('meals')} className="text-sm bg-white/20 hover:bg-white/30 transition-colors py-2 px-4 rounded-lg w-full text-left flex justify-between items-center backdrop-blur-sm cursor-pointer">
+              <Link href="/meals" className="text-sm bg-white/20 hover:bg-white/30 transition-colors py-2 px-4 rounded-lg w-full text-left flex justify-between items-center backdrop-blur-sm cursor-pointer">
                 Update Daily Meals <ChevronRight size={16} />
-              </button>
+              </Link>
             </div>
           </CardContent>
         </Card>
@@ -441,7 +452,7 @@ export default function App() {
         <Card className="bg-card/60 backdrop-blur-md border border-border rounded-lg p-6 lg:col-span-2 flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-light text-foreground">Expense Trend ({format(new Date(expenses[0]?.date || today), 'MMM')})</h3>
-            <button onClick={() => setActiveTab('expenses')} className="text-primary text-sm font-light hover:underline cursor-pointer">View Ledger</button>
+            <Link href="/expenses" className="text-primary text-sm font-light hover:underline cursor-pointer">View Ledger</Link>
           </div>
           <div className="flex-1 min-h-[250px]">
             <ExpenseChart data={expenseChartData} />
@@ -452,13 +463,13 @@ export default function App() {
         <Card className="bg-card/60 backdrop-blur-md border border-border rounded-lg p-6 flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-light text-foreground">Member Balances</h3>
-            <button onClick={() => setActiveTab('members')} className="text-primary text-sm font-light hover:underline cursor-pointer">View All</button>
+            <Link href="/members" className="text-primary text-sm font-light hover:underline cursor-pointer">View All</Link>
           </div>
           <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
             {(summary?.member_summaries || []).filter(m => m.is_active).sort((a, b) => a.balance - b.balance).map((member, i) => (
-              <div 
+              <Link 
                 key={member.id} 
-                onClick={() => setActiveTab('members')}
+                href="/members"
                 className="flex items-center justify-between p-3 rounded-md hover:bg-secondary/50 transition-colors border border-transparent hover:border-border/50 cursor-pointer"
               >
                 <div className="flex items-center gap-3">
@@ -478,7 +489,7 @@ export default function App() {
                   </p>
                   <p className="text-xs text-muted-foreground/80">Balance</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </Card>
@@ -1124,19 +1135,20 @@ export default function App() {
     </div>
   );
 
-  const SidebarItem = ({ id, icon: Icon, label }: { id: typeof activeTab, icon: any, label: string }) => {
-    const active = activeTab === id;
+  const SidebarItem = ({ id, icon: Icon, label }: { id: typeof currentTab, icon: any, label: string }) => {
+    const active = currentTab === id;
+    const href = id === 'dashboard' ? '/' : `/${id}`;
     return (
-      <button
+      <Link
+        href={href}
         onClick={() => {
-          setActiveTab(id);
           setIsMobileOpen(false);
         }}
         className={`transition-all duration-200 font-light rounded-md flex items-center gap-3 px-4 py-3 w-full cursor-pointer
           ${active ? 'bg-primary text-primary-foreground font-medium' : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`}
       >
         <Icon size={18} /> {label}
-      </button>
+      </Link>
     );
   };
 
@@ -1286,10 +1298,10 @@ export default function App() {
             
             <div className="flex flex-col">
               <h1 className="text-lg font-normal text-foreground leading-tight">
-                {tabInfo[activeTab]?.title}
+                {tabInfo[currentTab]?.title}
               </h1>
               <p className="text-xs text-muted-foreground hidden sm:block">
-                {tabInfo[activeTab]?.subtitle}
+                {tabInfo[currentTab]?.subtitle}
               </p>
             </div>
           </div>
@@ -1353,14 +1365,14 @@ export default function App() {
 
         <div className="flex-1 overflow-auto p-4 sm:p-8 custom-scrollbar">
           <div className="max-w-6xl mx-auto h-full flex flex-col">
-            {activeTab === 'dashboard' && DashboardView()}
-            {activeTab === 'members' && MembersView()}
-            {activeTab === 'meals' && MealsView()}
-            {activeTab === 'expenses' && ExpensesView()}
-            {activeTab === 'deposits' && DepositsView()}
-            {activeTab === 'schedule' && ScheduleView()}
-            {activeTab === 'reports' && ReportsView()}
-            {activeTab === 'messes' && isSuperAdmin && MessesView()}
+            {currentTab === 'dashboard' && DashboardView()}
+            {currentTab === 'members' && MembersView()}
+            {currentTab === 'meals' && MealsView()}
+            {currentTab === 'expenses' && ExpensesView()}
+            {currentTab === 'deposits' && DepositsView()}
+            {currentTab === 'schedule' && ScheduleView()}
+            {currentTab === 'reports' && ReportsView()}
+            {currentTab === 'messes' && isSuperAdmin && MessesView()}
           </div>
         </div>
       </main>

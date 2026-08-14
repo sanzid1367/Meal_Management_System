@@ -91,34 +91,32 @@ export async function buildSummary(messId: number, monthId: number): Promise<Sum
   } : undefined;
 
   // 1c. Auto-sync: Ensure all registered users in this mess exist in members table
-  await sql`
-    INSERT INTO members (mess_id, name, entry_date, is_active, created_at, user_id)
-    SELECT u.mess_id, u.username, CURRENT_DATE::text, 1, u.created_at, u.id
-    FROM users u
-    LEFT JOIN members m ON m.mess_id = u.mess_id AND LOWER(m.name) = LOWER(u.username)
-    WHERE u.mess_id = ${messId} AND m.id IS NULL
-    ON CONFLICT DO NOTHING;
-  `;
+  try {
+    const missingUsers = await sql`
+      SELECT u.id, u.username, u.mess_id, u.created_at
+      FROM users u
+      WHERE u.mess_id = ${messId}
+        AND NOT EXISTS (
+          SELECT 1 FROM members m 
+          WHERE m.mess_id = u.mess_id AND LOWER(m.name) = LOWER(u.username)
+        )
+    `;
 
-  await sql`
-    UPDATE users u
-    SET member_id = m.id
-    FROM members m
-    WHERE u.mess_id = ${messId} 
-      AND m.mess_id = ${messId} 
-      AND LOWER(m.name) = LOWER(u.username) 
-      AND u.member_id IS NULL;
-  `;
-
-  // 1d. Auto-create opening balances of 0 for members in this active month
-  await sql`
-    INSERT INTO opening_balances (member_id, month_id, amount, note, created_at, mess_id)
-    SELECT m.id, ${monthId}, 0, 'Auto-enrolled', CURRENT_TIMESTAMP::text, ${messId}
-    FROM members m
-    LEFT JOIN opening_balances ob ON ob.member_id = m.id AND ob.month_id = ${monthId}
-    WHERE m.mess_id = ${messId} AND ob.id IS NULL
-    ON CONFLICT (member_id, month_id) DO NOTHING;
-  `;
+    for (const u of missingUsers) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const nowStr = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+      const inserted = await sql`
+        INSERT INTO members (mess_id, name, entry_date, is_active, created_at, user_id)
+        VALUES (${u.mess_id}, ${u.username}, ${todayStr}, 1, ${nowStr}, ${u.id})
+        RETURNING id
+      `;
+      if (inserted.length > 0) {
+        await sql`UPDATE users SET member_id = ${inserted[0].id} WHERE id = ${u.id}`;
+      }
+    }
+  } catch (syncErr) {
+    console.warn("Auto-sync error in buildSummary:", syncErr);
+  }
 
   // 2. Fetch Members with their opening balances
   const members = await sql`
