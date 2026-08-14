@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { sql } from './db';
+import { getActiveMonth } from './db-helpers';
 import { UserRole, MembershipStatus } from '@/types';
 
 const SECRET_KEY = process.env.JWT_SECRET || "super-secret-meal-manager-key-change-in-production";
@@ -84,13 +85,33 @@ export async function getCurrentUser(request: Request): Promise<UserPayload | nu
         membershipStatus = 'unattached';
       } else {
         membershipStatus = 'active';
+        if (!resolvedMemberId) {
+          const res = await sql`
+            SELECT id FROM members WHERE mess_id = ${u.mess_id} AND LOWER(name) = LOWER(${u.username}) LIMIT 1
+          `;
+          if (res.length > 0) {
+            resolvedMemberId = Number(res[0].id);
+            await sql`UPDATE users SET member_id = ${resolvedMemberId} WHERE id = ${u.id}`;
+          } else {
+            const today = new Date().toISOString().split('T')[0];
+            const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+            const created = await sql`
+              INSERT INTO members (mess_id, name, entry_date, is_active, created_at, user_id)
+              VALUES (${u.mess_id}, ${u.username}, ${today}, 1, ${now}, ${u.id})
+              RETURNING id
+            `;
+            if (created.length > 0) {
+              resolvedMemberId = Number(created[0].id);
+              await sql`UPDATE users SET member_id = ${resolvedMemberId} WHERE id = ${u.id}`;
+            }
+          }
+        }
       }
     } else {
-      // Member role: verify real-time membership in the mess
+      // Member role: verify and auto-link membership in the mess
       if (!u.mess_id) {
         membershipStatus = 'unattached';
       } else {
-        // Query the member entry for this user
         let memberRow = null;
         if (resolvedMemberId) {
           const res = await sql`
@@ -110,6 +131,21 @@ export async function getCurrentUser(request: Request): Promise<UserPayload | nu
           if (res.length > 0) {
             memberRow = res[0];
             resolvedMemberId = Number(memberRow.id);
+            await sql`UPDATE users SET member_id = ${resolvedMemberId} WHERE id = ${u.id}`;
+          } else {
+            // Auto-enroll: User is a member of this mess, create their member row!
+            const today = new Date().toISOString().split('T')[0];
+            const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+            const created = await sql`
+              INSERT INTO members (mess_id, name, entry_date, is_active, created_at, user_id)
+              VALUES (${u.mess_id}, ${u.username}, ${today}, 1, ${now}, ${u.id})
+              RETURNING id, is_active
+            `;
+            if (created.length > 0) {
+              memberRow = created[0];
+              resolvedMemberId = Number(memberRow.id);
+              await sql`UPDATE users SET member_id = ${resolvedMemberId} WHERE id = ${u.id}`;
+            }
           }
         }
 
@@ -119,6 +155,21 @@ export async function getCurrentUser(request: Request): Promise<UserPayload | nu
           membershipStatus = 'active';
         }
       }
+    }
+
+    // Auto-create 0 opening balance for the active month so member shows up in reports
+    if (resolvedMemberId && u.mess_id) {
+      try {
+        const activeMonth = await getActiveMonth(Number(u.mess_id));
+        if (activeMonth) {
+          const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+          await sql`
+            INSERT INTO opening_balances (member_id, month_id, amount, note, created_at, mess_id)
+            VALUES (${resolvedMemberId}, ${activeMonth.id}, 0, 'Auto-enrolled', ${now}, ${u.mess_id})
+            ON CONFLICT (member_id, month_id) DO NOTHING
+          `;
+        }
+      } catch (monthErr) {}
     }
 
     return {

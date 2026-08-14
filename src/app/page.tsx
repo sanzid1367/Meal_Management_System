@@ -152,6 +152,22 @@ export default function App() {
   const activeMembers = useMemo(() => members.filter(m => m.is_active), [members]);
   const monthLabel = summary?.month?.name ?? format(new Date(), "yyyy-MM");
 
+  const displayMembers = useMemo(() => {
+    if (summary?.member_summaries && summary.member_summaries.length > 0) {
+      return summary.member_summaries;
+    }
+    return members.map(m => ({
+      id: m.id,
+      name: m.name,
+      phone: m.phone,
+      is_active: m.is_active,
+      total_deposit: 0,
+      total_meals: 0,
+      meal_cost: 0,
+      balance: 0
+    }));
+  }, [summary, members]);
+
   // Personal Member Summary (if current user corresponds to a member)
   const personalSummary = useMemo(() => {
     if (!user || !summary?.member_summaries) return null;
@@ -500,7 +516,7 @@ export default function App() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {(summary?.member_summaries || []).map(member => (
+            {displayMembers.map(member => (
               <tr 
                 key={member.id} 
                 onClick={() => {
