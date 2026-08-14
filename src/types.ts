@@ -1,15 +1,42 @@
+export type UserRole = "super_admin" | "manager" | "member";
+
+export type MembershipStatus = "active" | "removed" | "unattached";
+
+export type User = {
+  id: number;
+  username: string;
+  role: UserRole;
+  mess_id: number | null;
+  member_id: number | null;
+  created_at: string;
+  membership_status?: MembershipStatus;
+  mess_name?: string;
+};
+
+export type Mess = {
+  id: number;
+  name: string;
+  join_code: string;
+  created_at: string;
+  created_by: number | null;
+  member_count?: number;
+};
+
 export type Member = {
   id: number;
+  mess_id: number;
   name: string;
   phone: string | null;
   entry_date: string;
   is_active: number;
   created_at: string;
   deactivated_at: string | null;
+  user_id?: number | null;
 };
 
 export type Month = {
   id: number;
+  mess_id: number;
   name: string;
   start_date: string;
   closed_at: string | null;
@@ -18,6 +45,7 @@ export type Month = {
 
 export type Deposit = {
   id: number;
+  mess_id: number;
   member_id: number;
   member_name?: string;
   date: string;
@@ -28,6 +56,7 @@ export type Deposit = {
 
 export type Expense = {
   id: number;
+  mess_id: number;
   date: string;
   amount: number;
   description: string;
@@ -38,6 +67,7 @@ export type Expense = {
 
 export type MealEntry = {
   id: number;
+  mess_id: number;
   member_id: number;
   date: string;
   meal_type: "lunch" | "dinner";
@@ -47,6 +77,7 @@ export type MealEntry = {
 
 export type ScheduleEntry = {
   id: number;
+  mess_id: number;
   date: string;
   member_id: number;
   member_name: string;
@@ -69,6 +100,7 @@ export type MemberSummary = {
 };
 
 export type Summary = {
+  mess?: Mess;
   month: Month;
   members: Array<Member & { opening_balance: number; opening_note: string | null }>;
   member_summaries: MemberSummary[];
