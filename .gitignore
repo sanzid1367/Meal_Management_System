@@ -50,4 +50,8 @@ backup_old/
 .env.development.local
 .env.test.local
 .env.production.local
+local_mock.db*
+memory.md
+
+
 

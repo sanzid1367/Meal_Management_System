@@ -1,15 +1,19 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
-import { getCurrentUser, requireAdmin } from '@/lib/auth';
-import { initDb } from '@/lib/db';
+import bcrypt from 'bcryptjs';
+import { sql, initDb } from '@/lib/db';
+import { getCurrentUser, requireManager } from '@/lib/auth';
+import { getDefaultMessId } from '@/lib/db-helpers';
 
 export async function GET(request: Request) {
   try {
     await initDb();
-    
 
-    const adminUser = await getCurrentUser(request);
-    const isAdmin = adminUser?.role === 'admin';
+    const user = await getCurrentUser(request);
+    if (user && user.role !== 'super_admin' && user.membership_status !== 'active') {
+      return NextResponse.json({ detail: "Active membership required", code: "MEMBERSHIP_INACTIVE" }, { status: 403 });
+    }
+    const isPrivileged = user?.role === 'manager' || user?.role === 'super_admin';
+    const messId = user?.mess_id || (await getDefaultMessId());
 
     const { searchParams } = new URL(request.url);
     const includeInactive = searchParams.get('include_inactive') === 'true';
@@ -18,21 +22,21 @@ export async function GET(request: Request) {
     if (includeInactive) {
       members = await sql`
         SELECT * FROM members 
+        WHERE mess_id = ${messId}
         ORDER BY is_active DESC, LOWER(name)
       `;
     } else {
       members = await sql`
         SELECT * FROM members 
-        WHERE is_active = 1 
+        WHERE mess_id = ${messId} AND is_active = 1 
         ORDER BY is_active DESC, LOWER(name)
       `;
     }
 
-    // Convert numbers to correct types (Postgres driver handles booleans/ints as numbers, but verify)
-    const processed = members.map(m => ({
+    const processed = members.map((m: any) => ({
       ...m,
       is_active: Number(m.is_active),
-      phone: isAdmin ? m.phone : null
+      phone: (isPrivileged || user?.member_id === m.id) ? m.phone : null
     }));
 
     return NextResponse.json(processed);
@@ -44,30 +48,77 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     await initDb();
-    const adminUser = await requireAdmin(request);
-    if (!adminUser) {
-      return NextResponse.json({ detail: "Not enough permissions" }, { status: 403 });
+    const manager = await requireManager(request);
+    if (!manager || !manager.mess_id) {
+      return NextResponse.json({ detail: "Not enough permissions or no mess assigned" }, { status: 403 });
     }
 
-    const { name, phone, entry_date } = await request.json();
+    const { name, phone, entry_date, password } = await request.json();
     if (!name || !entry_date) {
       return NextResponse.json({ detail: "Name and entry date are required" }, { status: 400 });
     }
 
+    const trimmedName = name.trim();
     const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
     
-    const result = await sql`
-      INSERT INTO members (name, phone, entry_date, created_at)
-      VALUES (${name.trim()}, ${phone || null}, ${entry_date}, ${now})
-      RETURNING *
+    // Check if a member with this name already exists in this mess
+    const existingMember = await sql`
+      SELECT id FROM members 
+      WHERE mess_id = ${manager.mess_id} AND LOWER(name) = LOWER(${trimmedName})
+      LIMIT 1
     `;
 
-    const created = {
-      ...result[0],
-      is_active: Number(result[0].is_active)
+    let memberId: number;
+    let created;
+
+    if (existingMember.length > 0) {
+      memberId = existingMember[0].id;
+      // Reactivate if inactive
+      const updated = await sql`
+        UPDATE members 
+        SET is_active = 1, phone = COALESCE(${phone || null}, phone)
+        WHERE id = ${memberId}
+        RETURNING *
+      `;
+      created = updated[0];
+    } else {
+      const result = await sql`
+        INSERT INTO members (mess_id, name, phone, entry_date, created_at)
+        VALUES (${manager.mess_id}, ${trimmedName}, ${phone || null}, ${entry_date}, ${now})
+        RETURNING *
+      `;
+      created = result[0];
+      memberId = created.id;
+    }
+
+    // If manager provided a login password for this member, create or update user credentials
+    if (password && password.trim()) {
+      const hashedPassword = await bcrypt.hash(password.trim(), 10);
+      const existingUser = await sql`
+        SELECT id FROM users WHERE LOWER(username) = LOWER(${trimmedName}) LIMIT 1
+      `;
+      if (existingUser.length > 0) {
+        await sql`
+          UPDATE users 
+          SET hashed_password = ${hashedPassword},
+              mess_id = ${manager.mess_id},
+              member_id = ${memberId}
+          WHERE id = ${existingUser[0].id}
+        `;
+      } else {
+        await sql`
+          INSERT INTO users (username, hashed_password, role, mess_id, member_id, created_at)
+          VALUES (${trimmedName}, ${hashedPassword}, 'member', ${manager.mess_id}, ${memberId}, ${now})
+        `;
+      }
+    }
+
+    const responseMember = {
+      ...created,
+      is_active: Number(created.is_active)
     };
 
-    return NextResponse.json(created, { status: 201 });
+    return NextResponse.json(responseMember, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ detail: error.message || "Failed to create member" }, { status: 500 });
   }

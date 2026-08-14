@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
+import { sql, initDb } from '@/lib/db';
 import { validateMember } from '@/lib/db-helpers';
-import { requireAdmin } from '@/lib/auth';
-import { initDb } from '@/lib/db';
+import { requireManager } from '@/lib/auth';
 
 export async function PATCH(
   request: Request,
@@ -10,8 +9,8 @@ export async function PATCH(
 ) {
   try {
     await initDb();
-    const adminUser = await requireAdmin(request);
-    if (!adminUser) {
+    const manager = await requireManager(request);
+    if (!manager || !manager.mess_id) {
       return NextResponse.json({ detail: "Not enough permissions" }, { status: 403 });
     }
 
@@ -19,10 +18,12 @@ export async function PATCH(
     const expenseId = parseInt(id);
 
     const currentList = await sql`
-      SELECT id FROM expenses WHERE id = ${expenseId} LIMIT 1
+      SELECT id FROM expenses 
+      WHERE id = ${expenseId} AND mess_id = ${manager.mess_id} 
+      LIMIT 1
     `;
     if (currentList.length === 0) {
-      return NextResponse.json({ detail: "Expense not found" }, { status: 404 });
+      return NextResponse.json({ detail: "Expense not found in your mess" }, { status: 404 });
     }
 
     const body = await request.json();
@@ -30,9 +31,9 @@ export async function PATCH(
 
     if (body.shopper_member_id !== undefined) {
       if (body.shopper_member_id !== null) {
-        const exists = await validateMember(body.shopper_member_id);
+        const exists = await validateMember(manager.mess_id, body.shopper_member_id);
         if (!exists) {
-          return NextResponse.json({ detail: "Shopper member not found" }, { status: 404 });
+          return NextResponse.json({ detail: "Shopper member not found in your mess" }, { status: 404 });
         }
       }
       updates.shopper_member_id = body.shopper_member_id;
@@ -45,17 +46,19 @@ export async function PATCH(
       await sql`
         UPDATE expenses 
         SET ${sql(updates)} 
-        WHERE id = ${expenseId}
+        WHERE id = ${expenseId} AND mess_id = ${manager.mess_id}
       `;
     }
 
     const updatedList = await sql`
-      SELECT * FROM expenses WHERE id = ${expenseId}
+      SELECT * FROM expenses WHERE id = ${expenseId} AND mess_id = ${manager.mess_id}
     `;
     const updated = {
       ...updatedList[0],
       amount: Number(updatedList[0].amount),
-      shopper_member_id: updatedList[0].shopper_member_id ? Number(updatedList[0].shopper_member_id) : null
+      shopper_member_id: updatedList[0].shopper_member_id ? Number(updatedList[0].shopper_member_id) : null,
+      month_id: Number(updatedList[0].month_id),
+      mess_id: Number(updatedList[0].mess_id)
     };
 
     return NextResponse.json(updated);
@@ -70,8 +73,8 @@ export async function DELETE(
 ) {
   try {
     await initDb();
-    const adminUser = await requireAdmin(request);
-    if (!adminUser) {
+    const manager = await requireManager(request);
+    if (!manager || !manager.mess_id) {
       return NextResponse.json({ detail: "Not enough permissions" }, { status: 403 });
     }
 
@@ -79,14 +82,16 @@ export async function DELETE(
     const expenseId = parseInt(id);
 
     const currentList = await sql`
-      SELECT id FROM expenses WHERE id = ${expenseId} LIMIT 1
+      SELECT id FROM expenses 
+      WHERE id = ${expenseId} AND mess_id = ${manager.mess_id} 
+      LIMIT 1
     `;
     if (currentList.length === 0) {
-      return NextResponse.json({ detail: "Expense not found" }, { status: 404 });
+      return NextResponse.json({ detail: "Expense not found in your mess" }, { status: 404 });
     }
 
     await sql`
-      DELETE FROM expenses WHERE id = ${expenseId}
+      DELETE FROM expenses WHERE id = ${expenseId} AND mess_id = ${manager.mess_id}
     `;
 
     return NextResponse.json({ success: true });

@@ -1,17 +1,22 @@
-import { getActiveMonth, buildSummary } from '@/lib/db-helpers';
+import { getActiveMonth, buildSummary, getDefaultMessId } from '@/lib/db-helpers';
 import { getCurrentUser } from '@/lib/auth';
 import { initDb } from '@/lib/db';
 
 export async function GET(request: Request) {
   try {
     await initDb();
-    
 
-    const month = await getActiveMonth();
-    const summary = await buildSummary(month.id);
+    const user = await getCurrentUser(request);
+    const messId = user?.mess_id || (await getDefaultMessId());
+
+    const month = await getActiveMonth(messId);
+    const summary = await buildSummary(messId, month.id);
 
     // Build CSV rows
     const csvRows: string[][] = [];
+    if (summary.mess) {
+      csvRows.push(["Mess Name", summary.mess.name]);
+    }
     csvRows.push(["Month", month.name]);
     csvRows.push([]);
     csvRows.push(["Member", "Opening", "Deposits", "Meals", "Cost", "Balance"]);

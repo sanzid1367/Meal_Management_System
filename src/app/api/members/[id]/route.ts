@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
-import { requireAdmin } from '@/lib/auth';
-import { initDb } from '@/lib/db';
+import { sql, initDb } from '@/lib/db';
+import { requireManager } from '@/lib/auth';
 
 export async function PATCH(
   request: Request,
@@ -9,8 +8,8 @@ export async function PATCH(
 ) {
   try {
     await initDb();
-    const adminUser = await requireAdmin(request);
-    if (!adminUser) {
+    const manager = await requireManager(request);
+    if (!manager || !manager.mess_id) {
       return NextResponse.json({ detail: "Not enough permissions" }, { status: 403 });
     }
 
@@ -18,10 +17,12 @@ export async function PATCH(
     const memberId = parseInt(id);
 
     const currentList = await sql`
-      SELECT * FROM members WHERE id = ${memberId} LIMIT 1
+      SELECT * FROM members 
+      WHERE id = ${memberId} AND mess_id = ${manager.mess_id} 
+      LIMIT 1
     `;
     if (currentList.length === 0) {
-      return NextResponse.json({ detail: "Member not found" }, { status: 404 });
+      return NextResponse.json({ detail: "Member not found in your mess" }, { status: 404 });
     }
     const current = currentList[0];
 
@@ -48,12 +49,12 @@ export async function PATCH(
       await sql`
         UPDATE members 
         SET ${sql(updates)} 
-        WHERE id = ${memberId}
+        WHERE id = ${memberId} AND mess_id = ${manager.mess_id}
       `;
     }
 
     const updatedList = await sql`
-      SELECT * FROM members WHERE id = ${memberId}
+      SELECT * FROM members WHERE id = ${memberId} AND mess_id = ${manager.mess_id}
     `;
     const updated = {
       ...updatedList[0],
