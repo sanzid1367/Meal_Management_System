@@ -18,6 +18,12 @@ export async function getDefaultMessId(): Promise<number> {
 export async function getActiveMonth(messId?: number): Promise<Month> {
   const targetMessId = Number(messId || (await getDefaultMessId()));
 
+  // Ensure single-tenant constraint on months(name) is dropped
+  try {
+    await sql`ALTER TABLE months DROP CONSTRAINT IF EXISTS months_name_key CASCADE;`;
+    await sql`DROP INDEX IF EXISTS months_name_key;`;
+  } catch (e) {}
+
   const active = await sql<Month[]>`
     SELECT id, mess_id, name, start_date, closed_at, is_active 
     FROM months 
