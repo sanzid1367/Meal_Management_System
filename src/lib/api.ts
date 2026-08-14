@@ -28,7 +28,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
         }
       }
     }
-    throw new Error(text || response.statusText);
+    let errorMsg = text;
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed === 'object') {
+        errorMsg = parsed.detail || parsed.message || parsed.error || text;
+      }
+    } catch (e) {}
+    throw new Error(errorMsg || response.statusText);
   }
   return response.json() as Promise<T>;
 }

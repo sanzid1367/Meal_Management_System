@@ -2,21 +2,22 @@ import postgres from 'postgres';
 import bcrypt from 'bcryptjs';
 
 const connectionString = process.env.DATABASE_URL || '';
+const isPlaceholder = !connectionString || connectionString.includes("username:password@localhost:5432/database_name");
 
 const globalForDb = global as unknown as { sql: any };
 
 function getDatabaseInstance(): any {
   if (globalForDb.sql) return globalForDb.sql;
 
-  if (!connectionString) {
-    console.warn("⚠️ DATABASE_URL is not set. Please configure your PostgreSQL connection string in .env");
+  if (isPlaceholder) {
+    console.warn("⚠️ DATABASE_URL is not set or is still a placeholder. Please configure your PostgreSQL connection string in .env");
   }
 
-  const pgSql = postgres(connectionString, {
+  const pgSql = postgres(connectionString || 'postgresql://localhost:5432/dummy', {
     ssl: connectionString.includes('sslmode=require') || connectionString.includes('supabase') || connectionString.includes('neon') ? 'require' : false,
     max: 10,
     idle_timeout: 20,
-    connect_timeout: 10,
+    connect_timeout: 5,
   });
 
   if (process.env.NODE_ENV !== 'production') {
@@ -30,6 +31,10 @@ export const sql: any = getDatabaseInstance();
 let isDbInitialized = false;
 
 export async function initDb() {
+  if (isPlaceholder) {
+    throw new Error("PostgreSQL database not configured: Please set a valid DATABASE_URL in your .env file (e.g. from Neon, Supabase, or Railway).");
+  }
+
   if (isDbInitialized) return;
 
   try {
