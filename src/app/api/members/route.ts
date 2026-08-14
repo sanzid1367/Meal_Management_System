@@ -19,24 +19,32 @@ export async function GET(request: Request) {
     const includeInactive = searchParams.get('include_inactive') === 'true';
 
     // Auto-sync: Ensure every registered user in this mess has a member profile
-    await sql`
-      INSERT INTO members (mess_id, name, entry_date, is_active, created_at, user_id)
-      SELECT u.mess_id, u.username, CURRENT_DATE::text, 1, u.created_at, u.id
-      FROM users u
-      LEFT JOIN members m ON m.mess_id = u.mess_id AND LOWER(m.name) = LOWER(u.username)
-      WHERE u.mess_id = ${messId} AND m.id IS NULL
-      ON CONFLICT DO NOTHING;
-    `;
+    try {
+      const missingUsers = await sql`
+        SELECT u.id, u.username, u.mess_id, u.created_at
+        FROM users u
+        WHERE u.mess_id = ${messId}
+          AND NOT EXISTS (
+            SELECT 1 FROM members m 
+            WHERE m.mess_id = u.mess_id AND LOWER(m.name) = LOWER(u.username)
+          )
+      `;
 
-    await sql`
-      UPDATE users u
-      SET member_id = m.id
-      FROM members m
-      WHERE u.mess_id = ${messId} 
-        AND m.mess_id = ${messId} 
-        AND LOWER(m.name) = LOWER(u.username) 
-        AND u.member_id IS NULL;
-    `;
+      for (const u of missingUsers) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const nowStr = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+        const inserted = await sql`
+          INSERT INTO members (mess_id, name, entry_date, is_active, created_at, user_id)
+          VALUES (${u.mess_id}, ${u.username}, ${todayStr}, 1, ${nowStr}, ${u.id})
+          RETURNING id
+        `;
+        if (inserted.length > 0) {
+          await sql`UPDATE users SET member_id = ${inserted[0].id} WHERE id = ${u.id}`;
+        }
+      }
+    } catch (syncErr) {
+      console.warn("Auto-sync users error:", syncErr);
+    }
 
     let members;
     if (includeInactive) {
