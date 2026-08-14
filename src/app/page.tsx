@@ -167,16 +167,23 @@ export default function App() {
     if (summary?.member_summaries && summary.member_summaries.length > 0) {
       return summary.member_summaries;
     }
-    return members.map(m => ({
-      id: m.id,
-      name: m.name,
-      phone: m.phone,
-      is_active: m.is_active,
-      total_deposit: 0,
-      total_meals: 0,
-      meal_cost: 0,
-      balance: 0
-    }));
+    if (members && members.length > 0) {
+      return members.map(m => ({
+        id: Number(m.id),
+        name: m.name,
+        phone: m.phone,
+        is_active: Number(m.is_active),
+        opening_balance: 0,
+        total_deposit: 0,
+        total_member_meals: 0,
+        total_guest_meals: 0,
+        total_meals: 0,
+        meal_cost: 0,
+        available_funds: 0,
+        balance: 0
+      }));
+    }
+    return [];
   }, [summary, members]);
 
   // Personal Member Summary (if current user corresponds to a member)
@@ -527,7 +534,14 @@ export default function App() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {displayMembers.map(member => (
+            {displayMembers.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="p-8 text-center text-muted-foreground text-sm">
+                  No members found in this mess. {isManager && "Click '+ Add Member' above to enroll members or ask members to sign up!"}
+                </td>
+              </tr>
+            ) : (
+              displayMembers.map(member => (
               <tr 
                 key={member.id} 
                 onClick={() => {
@@ -585,7 +599,7 @@ export default function App() {
                   </td>
                 )}
               </tr>
-            ))}
+            )))}
           </tbody>
         </table>
       </div>

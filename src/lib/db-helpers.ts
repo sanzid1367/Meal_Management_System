@@ -4,7 +4,7 @@ import { Month, Member, Summary } from '@/types';
 export async function getDefaultMessId(): Promise<number> {
   const messes = await sql`SELECT id FROM messes ORDER BY id ASC LIMIT 1`;
   if (messes.length > 0) {
-    return messes[0].id;
+    return Number(messes[0].id);
   }
   const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
   const created = await sql`
@@ -12,11 +12,11 @@ export async function getDefaultMessId(): Promise<number> {
     VALUES ('Main Mess', 'MESSSYNC01', ${now})
     RETURNING id
   `;
-  return created[0].id;
+  return Number(created[0].id);
 }
 
 export async function getActiveMonth(messId?: number): Promise<Month> {
-  const targetMessId = messId || (await getDefaultMessId());
+  const targetMessId = Number(messId || (await getDefaultMessId()));
 
   const active = await sql<Month[]>`
     SELECT id, mess_id, name, start_date, closed_at, is_active 
@@ -42,7 +42,14 @@ export async function getActiveMonth(messId?: number): Promise<Month> {
       await sql`
         UPDATE months SET is_active = 1 WHERE id = ${existing[0].id}
       `;
-      return { ...existing[0], is_active: 1 };
+      return { 
+        id: Number(existing[0].id),
+        mess_id: Number(existing[0].mess_id),
+        name: existing[0].name,
+        start_date: existing[0].start_date,
+        closed_at: existing[0].closed_at,
+        is_active: 1 
+      };
     }
 
     // Insert new month for this mess
@@ -51,67 +58,98 @@ export async function getActiveMonth(messId?: number): Promise<Month> {
       VALUES (${targetMessId}, ${monthName}, ${startDate}, 1)
       RETURNING id, mess_id, name, start_date, closed_at, is_active
     `;
-    return insert[0];
+    return {
+      id: Number(insert[0].id),
+      mess_id: Number(insert[0].mess_id),
+      name: insert[0].name,
+      start_date: insert[0].start_date,
+      closed_at: insert[0].closed_at,
+      is_active: 1
+    };
   }
-  return active[0];
+  return {
+    id: Number(active[0].id),
+    mess_id: Number(active[0].mess_id),
+    name: active[0].name,
+    start_date: active[0].start_date,
+    closed_at: active[0].closed_at,
+    is_active: 1
+  };
 }
 
 export async function validateMember(messId: number, memberId: number): Promise<boolean> {
   const member = await sql`
-    SELECT id FROM members WHERE id = ${memberId} AND mess_id = ${messId} LIMIT 1
+    SELECT id FROM members 
+    WHERE id = ${Number(memberId)} AND mess_id = ${Number(messId)} AND is_active = 1
+    LIMIT 1
   `;
   return member.length > 0;
 }
 
 export async function buildSummary(messId: number, monthId: number): Promise<Summary> {
-  // 1. Fetch Month Info
-  const months = await sql`
-    SELECT id, mess_id, name, start_date, closed_at, is_active 
-    FROM months 
-    WHERE id = ${monthId} AND mess_id = ${messId}
-  `;
-  if (months.length === 0) {
-    throw new Error("Month not found for this mess");
-  }
-  const month = months[0] as Month;
+  const numericMessId = Number(messId);
+  const numericMonthId = Number(monthId);
 
-  // 1b. Fetch Mess Info
+  // 1. Fetch Mess
   const messes = await sql`
     SELECT id, name, join_code, created_at, created_by
     FROM messes
-    WHERE id = ${messId}
+    WHERE id = ${numericMessId}
     LIMIT 1
   `;
   const mess = messes.length > 0 ? {
-    id: messes[0].id,
+    id: Number(messes[0].id),
     name: messes[0].name,
     join_code: messes[0].join_code,
     created_at: messes[0].created_at,
-    created_by: messes[0].created_by
+    created_by: messes[0].created_by ? Number(messes[0].created_by) : null
   } : undefined;
 
-  // 1c. Auto-sync: Ensure all registered users in this mess exist in members table
-  try {
-    const missingUsers = await sql`
-      SELECT u.id, u.username, u.mess_id, u.created_at
-      FROM users u
-      WHERE u.mess_id = ${messId}
-        AND NOT EXISTS (
-          SELECT 1 FROM members m 
-          WHERE m.mess_id = u.mess_id AND LOWER(m.name) = LOWER(u.username)
-        )
-    `;
+  // 1b. Fetch Month
+  const months = await sql`
+    SELECT id, mess_id, name, start_date, closed_at, is_active
+    FROM months
+    WHERE id = ${numericMonthId}
+    LIMIT 1
+  `;
+  const month = months.length > 0 ? {
+    id: Number(months[0].id),
+    mess_id: Number(months[0].mess_id),
+    name: months[0].name,
+    start_date: months[0].start_date,
+    closed_at: months[0].closed_at,
+    is_active: Number(months[0].is_active)
+  } : {
+    id: numericMonthId,
+    mess_id: numericMessId,
+    name: new Date().toISOString().slice(0, 7),
+    start_date: `${new Date().toISOString().slice(0, 7)}-01`,
+    closed_at: null,
+    is_active: 1
+  };
 
-    for (const u of missingUsers) {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const nowStr = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
-      const inserted = await sql`
-        INSERT INTO members (mess_id, name, entry_date, is_active, created_at, user_id)
-        VALUES (${u.mess_id}, ${u.username}, ${todayStr}, 1, ${nowStr}, ${u.id})
-        RETURNING id
+  // 1c. Auto-sync: Ensure all users attached to this mess have a member profile
+  try {
+    const usersInMess = await sql`
+      SELECT id, username, mess_id, created_at FROM users WHERE mess_id = ${numericMessId}
+    `;
+    for (const u of usersInMess) {
+      const existingMember = await sql`
+        SELECT id FROM members WHERE mess_id = ${numericMessId} AND LOWER(name) = LOWER(${u.username}) LIMIT 1
       `;
-      if (inserted.length > 0) {
-        await sql`UPDATE users SET member_id = ${inserted[0].id} WHERE id = ${u.id}`;
+      if (existingMember.length === 0) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const nowStr = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+        const inserted = await sql`
+          INSERT INTO members (mess_id, name, entry_date, is_active, created_at, user_id)
+          VALUES (${numericMessId}, ${u.username}, ${todayStr}, 1, ${nowStr}, ${u.id})
+          RETURNING id
+        `;
+        if (inserted.length > 0) {
+          await sql`UPDATE users SET member_id = ${inserted[0].id} WHERE id = ${u.id}`;
+        }
+      } else {
+        await sql`UPDATE users SET member_id = ${existingMember[0].id} WHERE id = ${u.id} AND member_id IS NULL`;
       }
     }
   } catch (syncErr) {
@@ -125,31 +163,33 @@ export async function buildSummary(messId: number, monthId: number): Promise<Sum
            ob.note AS opening_note
     FROM members m
     LEFT JOIN opening_balances ob
-      ON ob.member_id = m.id AND ob.month_id = ${monthId} AND ob.mess_id = ${messId}
-    WHERE m.mess_id = ${messId}
+      ON ob.member_id = m.id AND ob.month_id = ${numericMonthId}
+    WHERE m.mess_id = ${numericMessId}
     ORDER BY m.is_active DESC, LOWER(m.name)
   `;
 
   // Parse types
-  for (const m of members) {
-    m.opening_balance = Number(m.opening_balance || 0);
-    m.is_active = Number(m.is_active);
-    m.mess_id = Number(m.mess_id);
-  }
+  const parsedMembers = members.map((m: any) => ({
+    ...m,
+    id: Number(m.id),
+    mess_id: Number(m.mess_id),
+    opening_balance: Number(m.opening_balance || 0),
+    is_active: Number(m.is_active)
+  }));
 
   // 3. Fetch Sums
   const [expenseResult, depositResult, openingResult, mealsResult] = await Promise.all([
     sql`
-      SELECT COALESCE(SUM(amount), 0) AS value FROM expenses WHERE month_id = ${monthId} AND mess_id = ${messId}
+      SELECT COALESCE(SUM(amount), 0) AS value FROM expenses WHERE month_id = ${numericMonthId} AND mess_id = ${numericMessId}
     `,
     sql`
-      SELECT COALESCE(SUM(amount), 0) AS value FROM deposits WHERE month_id = ${monthId} AND mess_id = ${messId}
+      SELECT COALESCE(SUM(amount), 0) AS value FROM deposits WHERE month_id = ${numericMonthId} AND mess_id = ${numericMessId}
     `,
     sql`
-      SELECT COALESCE(SUM(amount), 0) AS value FROM opening_balances WHERE month_id = ${monthId} AND mess_id = ${messId}
+      SELECT COALESCE(SUM(amount), 0) AS value FROM opening_balances WHERE month_id = ${numericMonthId} AND mess_id = ${numericMessId}
     `,
     sql`
-      SELECT COALESCE(SUM(count + guest_count), 0) AS value FROM meal_entries WHERE month_id = ${monthId} AND mess_id = ${messId}
+      SELECT COALESCE(SUM(count + guest_count), 0) AS value FROM meal_entries WHERE month_id = ${numericMonthId} AND mess_id = ${numericMessId}
     `
   ]);
 
@@ -168,18 +208,18 @@ export async function buildSummary(messId: number, monthId: number): Promise<Sum
            COALESCE(me.total_member_meals, 0) AS total_member_meals,
            COALESCE(me.total_guest_meals, 0) AS total_guest_meals
     FROM members m
-    LEFT JOIN opening_balances ob ON ob.member_id = m.id AND ob.month_id = ${monthId} AND ob.mess_id = ${messId}
+    LEFT JOIN opening_balances ob ON ob.member_id = m.id AND ob.month_id = ${numericMonthId}
     LEFT JOIN (
       SELECT member_id, SUM(amount) AS total_deposit
-      FROM deposits WHERE month_id = ${monthId} AND mess_id = ${messId} GROUP BY member_id
+      FROM deposits WHERE month_id = ${numericMonthId} AND mess_id = ${numericMessId} GROUP BY member_id
     ) d ON d.member_id = m.id
     LEFT JOIN (
       SELECT member_id,
              SUM(count) AS total_member_meals,
              SUM(guest_count) AS total_guest_meals
-      FROM meal_entries WHERE month_id = ${monthId} AND mess_id = ${messId} GROUP BY member_id
+      FROM meal_entries WHERE month_id = ${numericMonthId} AND mess_id = ${numericMessId} GROUP BY member_id
     ) me ON me.member_id = m.id
-    WHERE m.mess_id = ${messId}
+    WHERE m.mess_id = ${numericMessId}
     ORDER BY m.is_active DESC, LOWER(m.name)
   `;
 
@@ -214,7 +254,7 @@ export async function buildSummary(messId: number, monthId: number): Promise<Sum
   return {
     mess,
     month,
-    members: members as any[],
+    members: parsedMembers as any[],
     member_summaries: processedSummaries,
     totals: {
       total_expense,

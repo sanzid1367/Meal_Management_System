@@ -13,33 +13,33 @@ export async function GET(request: Request) {
       return NextResponse.json({ detail: "Active membership required", code: "MEMBERSHIP_INACTIVE" }, { status: 403 });
     }
     const isPrivileged = user?.role === 'manager' || user?.role === 'super_admin';
-    const messId = user?.mess_id || (await getDefaultMessId());
+    const messId = Number(user?.mess_id || (await getDefaultMessId()));
 
     const { searchParams } = new URL(request.url);
     const includeInactive = searchParams.get('include_inactive') === 'true';
 
     // Auto-sync: Ensure every registered user in this mess has a member profile
     try {
-      const missingUsers = await sql`
-        SELECT u.id, u.username, u.mess_id, u.created_at
-        FROM users u
-        WHERE u.mess_id = ${messId}
-          AND NOT EXISTS (
-            SELECT 1 FROM members m 
-            WHERE m.mess_id = u.mess_id AND LOWER(m.name) = LOWER(u.username)
-          )
+      const usersInMess = await sql`
+        SELECT id, username, mess_id, created_at FROM users WHERE mess_id = ${messId}
       `;
-
-      for (const u of missingUsers) {
-        const todayStr = new Date().toISOString().split('T')[0];
-        const nowStr = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
-        const inserted = await sql`
-          INSERT INTO members (mess_id, name, entry_date, is_active, created_at, user_id)
-          VALUES (${u.mess_id}, ${u.username}, ${todayStr}, 1, ${nowStr}, ${u.id})
-          RETURNING id
+      for (const u of usersInMess) {
+        const existingMember = await sql`
+          SELECT id FROM members WHERE mess_id = ${messId} AND LOWER(name) = LOWER(${u.username}) LIMIT 1
         `;
-        if (inserted.length > 0) {
-          await sql`UPDATE users SET member_id = ${inserted[0].id} WHERE id = ${u.id}`;
+        if (existingMember.length === 0) {
+          const todayStr = new Date().toISOString().split('T')[0];
+          const nowStr = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+          const inserted = await sql`
+            INSERT INTO members (mess_id, name, entry_date, is_active, created_at, user_id)
+            VALUES (${messId}, ${u.username}, ${todayStr}, 1, ${nowStr}, ${u.id})
+            RETURNING id
+          `;
+          if (inserted.length > 0) {
+            await sql`UPDATE users SET member_id = ${inserted[0].id} WHERE id = ${u.id}`;
+          }
+        } else {
+          await sql`UPDATE users SET member_id = ${existingMember[0].id} WHERE id = ${u.id} AND member_id IS NULL`;
         }
       }
     } catch (syncErr) {
@@ -63,6 +63,8 @@ export async function GET(request: Request) {
 
     const processed = members.map((m: any) => ({
       ...m,
+      id: Number(m.id),
+      mess_id: Number(m.mess_id),
       is_active: Number(m.is_active),
       phone: (isPrivileged || user?.member_id === m.id) ? m.phone : null
     }));
@@ -81,6 +83,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ detail: "Not enough permissions or no mess assigned" }, { status: 403 });
     }
 
+    const messId = Number(manager.mess_id);
     const { name, phone, entry_date, password } = await request.json();
     if (!name || !entry_date) {
       return NextResponse.json({ detail: "Name and entry date are required" }, { status: 400 });
@@ -92,7 +95,7 @@ export async function POST(request: Request) {
     // Check if a member with this name already exists in this mess
     const existingMember = await sql`
       SELECT id FROM members 
-      WHERE mess_id = ${manager.mess_id} AND LOWER(name) = LOWER(${trimmedName})
+      WHERE mess_id = ${messId} AND LOWER(name) = LOWER(${trimmedName})
       LIMIT 1
     `;
 
@@ -100,7 +103,7 @@ export async function POST(request: Request) {
     let created;
 
     if (existingMember.length > 0) {
-      memberId = existingMember[0].id;
+      memberId = Number(existingMember[0].id);
       // Reactivate if inactive
       const updated = await sql`
         UPDATE members 
@@ -112,20 +115,20 @@ export async function POST(request: Request) {
     } else {
       const result = await sql`
         INSERT INTO members (mess_id, name, phone, entry_date, created_at)
-        VALUES (${manager.mess_id}, ${trimmedName}, ${phone || null}, ${entry_date}, ${now})
+        VALUES (${messId}, ${trimmedName}, ${phone || null}, ${entry_date}, ${now})
         RETURNING *
       `;
       created = result[0];
-      memberId = created.id;
+      memberId = Number(created.id);
     }
 
     // Auto-create opening balance of 0 for the active month
     try {
-      const activeMonth = await getActiveMonth(manager.mess_id);
+      const activeMonth = await getActiveMonth(messId);
       if (activeMonth && memberId) {
         await sql`
           INSERT INTO opening_balances (member_id, month_id, amount, note, created_at, mess_id)
-          VALUES (${memberId}, ${activeMonth.id}, 0, 'Enrolled by manager', ${now}, ${manager.mess_id})
+          VALUES (${memberId}, ${activeMonth.id}, 0, 'Enrolled by manager', ${now}, ${messId})
           ON CONFLICT (member_id, month_id) DO NOTHING
         `;
       }
@@ -143,14 +146,14 @@ export async function POST(request: Request) {
         await sql`
           UPDATE users 
           SET hashed_password = ${hashedPassword},
-              mess_id = ${manager.mess_id},
+              mess_id = ${messId},
               member_id = ${memberId}
           WHERE id = ${existingUser[0].id}
         `;
       } else {
         const newUser = await sql`
           INSERT INTO users (username, hashed_password, role, mess_id, member_id, created_at)
-          VALUES (${trimmedName}, ${hashedPassword}, 'member', ${manager.mess_id}, ${memberId}, ${now})
+          VALUES (${trimmedName}, ${hashedPassword}, 'member', ${messId}, ${memberId}, ${now})
           RETURNING id
         `;
         if (newUser.length > 0) {
@@ -161,6 +164,8 @@ export async function POST(request: Request) {
 
     const responseMember = {
       ...created,
+      id: Number(created.id),
+      mess_id: Number(created.mess_id),
       is_active: Number(created.is_active)
     };
 
