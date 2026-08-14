@@ -6,7 +6,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   Home, Users, Utensils, Receipt, Wallet, Calendar,
   Plus, ChevronRight, X, FileText, CalendarDays, Share2, Copy, Check, Loader2, Menu,
-  Pencil, Trash2, KeyRound, Building2, Shield, LogIn, LogOut, ArrowRight, CheckCircle2, Sparkles
+  Pencil, Trash2, KeyRound, Building2, Shield, LogIn, LogOut, ArrowRight, CheckCircle2, Sparkles,
+  Clock, AlertTriangle
 } from 'lucide-react';
 import { format } from "date-fns";
 import QRCode from 'qrcode';
@@ -160,7 +161,10 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const activeMembers = useMemo(() => members.filter(m => m.is_active), [members]);
+  const activeMembers = useMemo(() => members.filter(m => Number(m.is_active) === 1), [members]);
+  const pendingMembers = useMemo(() => {
+    return members.filter(m => m.status === 'pending' || (Number(m.is_active) === 0 && m.status !== 'rejected' && !m.deactivated_at));
+  }, [members]);
   const monthLabel = summary?.month?.name ?? format(new Date(), "yyyy-MM");
 
   const displayMembers = useMemo(() => {
@@ -506,6 +510,84 @@ export default function App() {
 
   const MembersView = () => (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Manager Pending Approvals Section */}
+      {isManager && pendingMembers.length > 0 && (
+        <Card className="border border-amber-500/30 bg-amber-500/5 backdrop-blur-md rounded-xl p-5 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <Clock className="text-amber-500 shrink-0" size={18} />
+              <h3 className="text-sm font-medium text-foreground">
+                Pending Member Approvals ({pendingMembers.length})
+              </h3>
+            </div>
+            <span className="text-xs text-muted-foreground">New member sign-up requests awaiting approval</span>
+          </div>
+
+          <div className="space-y-3">
+            {pendingMembers.map(pendingMember => (
+              <div
+                key={pendingMember.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-card/80 border border-border rounded-lg gap-3"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-medium text-sm shrink-0">
+                    {pendingMember.name.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-foreground">{pendingMember.name}</h4>
+                    <p className="text-xs text-muted-foreground">Registered: {pendingMember.entry_date} {pendingMember.phone ? `• ${pendingMember.phone}` : ''}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-end sm:self-center">
+                  <Button
+                    size="sm"
+                    disabled={updatingMembers[pendingMember.id]}
+                    onClick={async () => {
+                      setUpdatingMembers(prev => ({ ...prev, [pendingMember.id]: true }));
+                      try {
+                        await api.updateMember(pendingMember.id, { status: 'active', is_active: 1 });
+                        await loadAll();
+                        showToast("Member Approved", `${pendingMember.name} is now an active member!`);
+                      } catch (err: any) {
+                        showToast("Error", "Failed to approve member.", "error");
+                      } finally {
+                        setUpdatingMembers(prev => ({ ...prev, [pendingMember.id]: false }));
+                      }
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  >
+                    {updatingMembers[pendingMember.id] ? <Loader2 className="animate-spin" size={13} /> : <Check size={14} />}
+                    Approve
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={updatingMembers[pendingMember.id]}
+                    onClick={async () => {
+                      if (!confirm(`Are you sure you want to reject ${pendingMember.name}'s request to join?`)) return;
+                      setUpdatingMembers(prev => ({ ...prev, [pendingMember.id]: true }));
+                      try {
+                        await api.updateMember(pendingMember.id, { status: 'rejected', is_active: 0 });
+                        await loadAll();
+                        showToast("Request Rejected", `${pendingMember.name}'s request was rejected.`, "error");
+                      } catch (err: any) {
+                        showToast("Error", "Failed to reject member.", "error");
+                      } finally {
+                        setUpdatingMembers(prev => ({ ...prev, [pendingMember.id]: false }));
+                      }
+                    }}
+                    className="text-destructive border-destructive/20 hover:bg-destructive/10 rounded-md text-xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <X size={14} /> Reject
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       <div className="flex justify-between items-center mb-6 shrink-0">
         <p className="text-sm text-muted-foreground">
           {activeMembers.length} active members enrolled in this mess.
@@ -1379,6 +1461,26 @@ export default function App() {
 
         <div className="flex-1 overflow-auto p-4 sm:p-8 custom-scrollbar">
           <div className="max-w-6xl mx-auto h-full flex flex-col">
+            {/* Pending Approval Banner for Unapproved Members */}
+            {user?.membership_status === 'pending' && (
+              <div className="bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 p-4 rounded-xl mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm animate-in fade-in">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                    <Clock size={20} className="text-amber-500" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium">Membership Approval Pending</h4>
+                    <p className="text-xs opacity-90">
+                      Your sign-up request to join <strong>{summary?.mess?.name || user?.mess_name || 'this mess'}</strong> is awaiting approval from the manager. You can browse the platform in read-only mode until approved.
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="border-amber-500/30 text-amber-500 text-xs px-2.5 py-1 shrink-0">
+                  Pending Approval
+                </Badge>
+              </div>
+            )}
+
             {currentTab === 'dashboard' && DashboardView()}
             {currentTab === 'members' && MembersView()}
             {currentTab === 'meals' && MealsView()}

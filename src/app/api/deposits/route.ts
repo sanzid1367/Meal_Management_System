@@ -8,8 +8,13 @@ export async function GET(request: Request) {
     await initDb();
 
     const user = await getCurrentUser(request);
-    if (user && user.role !== 'super_admin' && user.membership_status !== 'active') {
-      return NextResponse.json({ detail: "Active membership required", code: "MEMBERSHIP_INACTIVE" }, { status: 403 });
+    if (user && user.role !== 'super_admin') {
+      if (user.membership_status === 'pending') {
+        return NextResponse.json([]);
+      }
+      if (user.membership_status !== 'active') {
+        return NextResponse.json({ detail: "Active membership required", code: "MEMBERSHIP_INACTIVE" }, { status: 403 });
+      }
     }
     const messId = user?.mess_id || (await getDefaultMessId());
 

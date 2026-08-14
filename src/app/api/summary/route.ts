@@ -12,14 +12,33 @@ export async function GET(request: Request) {
       return NextResponse.json({ detail: "Authentication and mess assignment required" }, { status: 401 });
     }
 
-    if (user.role !== 'super_admin' && user.membership_status !== 'active') {
-      return NextResponse.json({ 
-        detail: user.membership_status === 'removed' 
-          ? "Your membership has been deactivated by the manager." 
-          : "You are not attached to an active mess.",
-        code: "MEMBERSHIP_INACTIVE",
-        membership_status: user.membership_status
-      }, { status: 403 });
+    if (user.role !== 'super_admin') {
+      if (user.membership_status === 'pending') {
+        const month = await getActiveMonth(user.mess_id);
+        return NextResponse.json({
+          mess: { id: user.mess_id, name: user.mess_name || 'Mess' },
+          month,
+          members: [],
+          member_summaries: [],
+          totals: {
+            total_expense: 0,
+            total_deposit: 0,
+            opening_balance_total: 0,
+            total_meals: 0,
+            meal_rate: 0,
+            cash_in_hand: 0,
+            book_balance: 0
+          }
+        });
+      }
+
+      if (user.membership_status === 'removed') {
+        return NextResponse.json({ 
+          detail: "Your membership has been deactivated by the manager.",
+          code: "MEMBERSHIP_INACTIVE",
+          membership_status: user.membership_status
+        }, { status: 403 });
+      }
     }
 
     const isPrivileged = user.role === 'manager' || user.role === 'super_admin';

@@ -1,6 +1,6 @@
 export type UserRole = "super_admin" | "manager" | "member";
 
-export type MembershipStatus = "active" | "removed" | "unattached";
+export type MembershipStatus = "active" | "pending" | "removed" | "unattached" | "rejected";
 
 export type User = {
   id: number;
@@ -32,6 +32,7 @@ export type Member = {
   created_at: string;
   deactivated_at: string | null;
   user_id?: number | null;
+  status?: "active" | "pending" | "rejected";
 };
 
 export type Month = {
@@ -97,6 +98,7 @@ export type MemberSummary = {
   meal_cost: number;
   available_funds: number;
   balance: number;
+  status?: "active" | "pending" | "rejected";
 };
 
 export type Summary = {
