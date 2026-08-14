@@ -18,6 +18,26 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const includeInactive = searchParams.get('include_inactive') === 'true';
 
+    // Auto-sync: Ensure every registered user in this mess has a member profile
+    await sql`
+      INSERT INTO members (mess_id, name, entry_date, is_active, created_at, user_id)
+      SELECT u.mess_id, u.username, CURRENT_DATE::text, 1, u.created_at, u.id
+      FROM users u
+      LEFT JOIN members m ON m.mess_id = u.mess_id AND LOWER(m.name) = LOWER(u.username)
+      WHERE u.mess_id = ${messId} AND m.id IS NULL
+      ON CONFLICT DO NOTHING;
+    `;
+
+    await sql`
+      UPDATE users u
+      SET member_id = m.id
+      FROM members m
+      WHERE u.mess_id = ${messId} 
+        AND m.mess_id = ${messId} 
+        AND LOWER(m.name) = LOWER(u.username) 
+        AND u.member_id IS NULL;
+    `;
+
     let members;
     if (includeInactive) {
       members = await sql`

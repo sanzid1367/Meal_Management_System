@@ -90,6 +90,36 @@ export async function buildSummary(messId: number, monthId: number): Promise<Sum
     created_by: messes[0].created_by
   } : undefined;
 
+  // 1c. Auto-sync: Ensure all registered users in this mess exist in members table
+  await sql`
+    INSERT INTO members (mess_id, name, entry_date, is_active, created_at, user_id)
+    SELECT u.mess_id, u.username, CURRENT_DATE::text, 1, u.created_at, u.id
+    FROM users u
+    LEFT JOIN members m ON m.mess_id = u.mess_id AND LOWER(m.name) = LOWER(u.username)
+    WHERE u.mess_id = ${messId} AND m.id IS NULL
+    ON CONFLICT DO NOTHING;
+  `;
+
+  await sql`
+    UPDATE users u
+    SET member_id = m.id
+    FROM members m
+    WHERE u.mess_id = ${messId} 
+      AND m.mess_id = ${messId} 
+      AND LOWER(m.name) = LOWER(u.username) 
+      AND u.member_id IS NULL;
+  `;
+
+  // 1d. Auto-create opening balances of 0 for members in this active month
+  await sql`
+    INSERT INTO opening_balances (member_id, month_id, amount, note, created_at, mess_id)
+    SELECT m.id, ${monthId}, 0, 'Auto-enrolled', CURRENT_TIMESTAMP::text, ${messId}
+    FROM members m
+    LEFT JOIN opening_balances ob ON ob.member_id = m.id AND ob.month_id = ${monthId}
+    WHERE m.mess_id = ${messId} AND ob.id IS NULL
+    ON CONFLICT (member_id, month_id) DO NOTHING;
+  `;
+
   // 2. Fetch Members with their opening balances
   const members = await sql`
     SELECT m.id, m.mess_id, m.name, m.phone, m.entry_date, m.is_active, m.created_at, m.deactivated_at,
