@@ -178,6 +178,7 @@ export async function initDb() {
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS mess_id INTEGER REFERENCES messes(id) ON DELETE CASCADE;`;
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS user_id INTEGER;`;
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS deactivated_at TEXT;`;
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active';`;
     await sql`ALTER TABLE months ADD COLUMN IF NOT EXISTS mess_id INTEGER REFERENCES messes(id) ON DELETE CASCADE;`;
     await sql`ALTER TABLE opening_balances ADD COLUMN IF NOT EXISTS mess_id INTEGER REFERENCES messes(id) ON DELETE CASCADE;`;
     await sql`ALTER TABLE deposits ADD COLUMN IF NOT EXISTS mess_id INTEGER REFERENCES messes(id) ON DELETE CASCADE;`;

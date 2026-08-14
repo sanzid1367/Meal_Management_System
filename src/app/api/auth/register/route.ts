@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { sql, initDb } from '@/lib/db';
 import { createAccessToken } from '@/lib/auth';
 import { getDefaultMessId, getActiveMonth } from '@/lib/db-helpers';
-import { UserRole } from '@/types';
+import { UserRole, MembershipStatus } from '@/types';
 
 function generateJoinCode(length = 7): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -28,12 +28,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ detail: "Username must be at least 2 characters long" }, { status: 400 });
     }
 
-    // Check if username is already registered
+    // Strictly enforce: one member account can register to only one mess
     const existing = await sql`
-      SELECT id FROM users WHERE LOWER(username) = LOWER(${trimmedUsername}) LIMIT 1
+      SELECT id, mess_id FROM users WHERE LOWER(username) = LOWER(${trimmedUsername}) LIMIT 1
     `;
     if (existing.length > 0) {
-      return NextResponse.json({ detail: "Username is already registered. Please sign in or choose another name." }, { status: 400 });
+      return NextResponse.json({ 
+        detail: "This username is already registered. Each account can belong to only one mess." 
+      }, { status: 400 });
     }
 
     let targetMessId: number | null = null;
@@ -55,7 +57,7 @@ export async function POST(request: Request) {
         VALUES (${cleanMessName}, ${code}, ${now})
         RETURNING id, name
       `;
-      targetMessId = newMess[0].id;
+      targetMessId = Number(newMess[0].id);
       targetMessName = newMess[0].name;
       targetRole = 'manager';
     } else if (mess_id) {
@@ -66,7 +68,7 @@ export async function POST(request: Request) {
       if (foundMess.length === 0) {
         return NextResponse.json({ detail: "Selected Mess does not exist." }, { status: 400 });
       }
-      targetMessId = foundMess[0].id;
+      targetMessId = Number(foundMess[0].id);
       targetMessName = foundMess[0].name;
       targetRole = 'member';
     } else {
@@ -79,6 +81,11 @@ export async function POST(request: Request) {
       targetRole = 'member';
     }
 
+    const isManager = targetRole === 'manager';
+    const initialIsActive = isManager ? 1 : 0;
+    const initialStatus = isManager ? 'active' : 'pending';
+    const membershipStatus: MembershipStatus = isManager ? 'active' : 'pending';
+
     // Check if there is an existing member profile matching the username in that mess
     let memberId: number | null = null;
     if (targetMessId) {
@@ -88,35 +95,37 @@ export async function POST(request: Request) {
         LIMIT 1
       `;
       if (matchingMember.length > 0) {
-        memberId = matchingMember[0].id;
-        // Reactivate member if previously marked inactive
+        memberId = Number(matchingMember[0].id);
         await sql`
-          UPDATE members SET is_active = 1 WHERE id = ${memberId}
+          UPDATE members 
+          SET is_active = ${initialIsActive}, status = ${initialStatus} 
+          WHERE id = ${memberId}
         `;
       } else {
-        // Automatically create a member profile for this member in the mess
         const newMember = await sql`
-          INSERT INTO members (mess_id, name, entry_date, is_active, created_at)
-          VALUES (${targetMessId}, ${trimmedUsername}, ${today}, 1, ${now})
+          INSERT INTO members (mess_id, name, entry_date, is_active, status, created_at)
+          VALUES (${targetMessId}, ${trimmedUsername}, ${today}, ${initialIsActive}, ${initialStatus}, ${now})
           RETURNING id
         `;
         if (newMember.length > 0) {
-          memberId = newMember[0].id;
+          memberId = Number(newMember[0].id);
         }
       }
 
-      // Automatically enroll into active month with 0 opening balance so member appears in roster immediately
-      try {
-        const activeMonth = await getActiveMonth(targetMessId);
-        if (activeMonth && memberId) {
-          await sql`
-            INSERT INTO opening_balances (member_id, month_id, amount, note, created_at, mess_id)
-            VALUES (${memberId}, ${activeMonth.id}, 0, 'Auto-enrolled on sign-up', ${now}, ${targetMessId})
-            ON CONFLICT (member_id, month_id) DO NOTHING
-          `;
+      // If manager created the mess, immediately initialize active month opening balance
+      if (isManager && memberId) {
+        try {
+          const activeMonth = await getActiveMonth(targetMessId);
+          if (activeMonth) {
+            await sql`
+              INSERT INTO opening_balances (member_id, month_id, amount, note, created_at, mess_id)
+              VALUES (${memberId}, ${activeMonth.id}, 0, 'Auto-enrolled on sign-up', ${now}, ${targetMessId})
+              ON CONFLICT (member_id, month_id) DO NOTHING
+            `;
+          }
+        } catch (monthErr) {
+          console.warn("Could not auto-create opening balance:", monthErr);
         }
-      } catch (monthErr) {
-        console.warn("Could not auto-create opening balance:", monthErr);
       }
     }
 
@@ -144,7 +153,7 @@ export async function POST(request: Request) {
       member_id: user.member_id ? Number(user.member_id) : null,
       created_at: user.created_at,
       mess_name: targetMessName,
-      membership_status: 'active' as const
+      membership_status: membershipStatus
     };
 
     const token = createAccessToken(userPayload);

@@ -149,7 +149,11 @@ export async function getCurrentUser(request: Request): Promise<UserPayload | nu
           }
         }
 
-        if (!memberRow || Number(memberRow.is_active) === 0) {
+        if (!memberRow) {
+          membershipStatus = 'unattached';
+        } else if (memberRow.status === 'pending' || (Number(memberRow.is_active) === 0 && memberRow.status !== 'rejected' && !memberRow.deactivated_at)) {
+          membershipStatus = 'pending';
+        } else if (memberRow.status === 'rejected' || Number(memberRow.is_active) === 0) {
           membershipStatus = 'removed';
         } else {
           membershipStatus = 'active';
@@ -157,8 +161,8 @@ export async function getCurrentUser(request: Request): Promise<UserPayload | nu
       }
     }
 
-    // Auto-create 0 opening balance for the active month so member shows up in reports
-    if (resolvedMemberId && u.mess_id) {
+    // Auto-create 0 opening balance for the active month only if member is active
+    if (resolvedMemberId && u.mess_id && membershipStatus === 'active') {
       try {
         const activeMonth = await getActiveMonth(Number(u.mess_id));
         if (activeMonth) {
