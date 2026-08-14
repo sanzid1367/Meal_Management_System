@@ -1124,6 +1124,16 @@ export default function App() {
     );
   };
 
+  // If user is not logged in, render the Auth view directly
+  if (!user) {
+    return (
+      <Auth onLogin={(loggedInUser) => {
+        setUser(loggedInUser);
+        loadAll();
+      }} />
+    );
+  }
+
   // If user is logged in, but dropped or unattached to any mess, render UnattachedMessView
   const isUnattachedOrRemoved = user && user.role !== 'super_admin' && (
     user.membership_status === 'removed' || user.membership_status === 'unattached' || !user.mess_id
