@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { sql, initDb } from '@/lib/db';
 import { getCurrentUser, requireManager } from '@/lib/auth';
-import { getDefaultMessId } from '@/lib/db-helpers';
+import { getDefaultMessId, getActiveMonth } from '@/lib/db-helpers';
 
 export async function GET(request: Request) {
   try {
@@ -91,6 +91,20 @@ export async function POST(request: Request) {
       memberId = created.id;
     }
 
+    // Auto-create opening balance of 0 for the active month
+    try {
+      const activeMonth = await getActiveMonth(manager.mess_id);
+      if (activeMonth && memberId) {
+        await sql`
+          INSERT INTO opening_balances (member_id, month_id, amount, note, created_at, mess_id)
+          VALUES (${memberId}, ${activeMonth.id}, 0, 'Enrolled by manager', ${now}, ${manager.mess_id})
+          ON CONFLICT (member_id, month_id) DO NOTHING
+        `;
+      }
+    } catch (monthErr) {
+      console.warn("Could not auto-create opening balance:", monthErr);
+    }
+
     // If manager provided a login password for this member, create or update user credentials
     if (password && password.trim()) {
       const hashedPassword = await bcrypt.hash(password.trim(), 10);
@@ -106,10 +120,14 @@ export async function POST(request: Request) {
           WHERE id = ${existingUser[0].id}
         `;
       } else {
-        await sql`
+        const newUser = await sql`
           INSERT INTO users (username, hashed_password, role, mess_id, member_id, created_at)
           VALUES (${trimmedName}, ${hashedPassword}, 'member', ${manager.mess_id}, ${memberId}, ${now})
+          RETURNING id
         `;
+        if (newUser.length > 0) {
+          await sql`UPDATE members SET user_id = ${newUser[0].id} WHERE id = ${memberId}`;
+        }
       }
     }
 
