@@ -89,14 +89,13 @@ export async function POST(request: Request) {
 
     const mess = createdMess[0];
 
-    // If user is not super_admin, make them manager of this new mess
-    if (user.role !== 'super_admin') {
-      await sql`
-        UPDATE users 
-        SET role = 'manager', mess_id = ${mess.id}
-        WHERE id = ${user.id}
-      `;
-    }
+    // Always associate user with their newly created mess
+    await sql`
+      UPDATE users 
+      SET mess_id = ${mess.id},
+          role = CASE WHEN role = 'super_admin' THEN 'super_admin' ELSE 'manager' END
+      WHERE id = ${user.id}
+    `;
 
     // Refresh token with new claims
     const updatedUser = {
