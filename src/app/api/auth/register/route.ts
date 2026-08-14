@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { sql, initDb } from '@/lib/db';
 import { createAccessToken } from '@/lib/auth';
-import { getDefaultMessId } from '@/lib/db-helpers';
+import { getDefaultMessId, getActiveMonth } from '@/lib/db-helpers';
 import { UserRole } from '@/types';
 
 function generateJoinCode(length = 7): string {
@@ -89,6 +89,10 @@ export async function POST(request: Request) {
       `;
       if (matchingMember.length > 0) {
         memberId = matchingMember[0].id;
+        // Reactivate member if previously marked inactive
+        await sql`
+          UPDATE members SET is_active = 1 WHERE id = ${memberId}
+        `;
       } else {
         // Automatically create a member profile for this member in the mess
         const newMember = await sql`
@@ -99,6 +103,20 @@ export async function POST(request: Request) {
         if (newMember.length > 0) {
           memberId = newMember[0].id;
         }
+      }
+
+      // Automatically enroll into active month with 0 opening balance so member appears in roster immediately
+      try {
+        const activeMonth = await getActiveMonth(targetMessId);
+        if (activeMonth && memberId) {
+          await sql`
+            INSERT INTO opening_balances (member_id, month_id, amount, note, created_at, mess_id)
+            VALUES (${memberId}, ${activeMonth.id}, 0, 'Auto-enrolled on sign-up', ${now}, ${targetMessId})
+            ON CONFLICT (member_id, month_id) DO NOTHING
+          `;
+        }
+      } catch (monthErr) {
+        console.warn("Could not auto-create opening balance:", monthErr);
       }
     }
 
@@ -112,6 +130,12 @@ export async function POST(request: Request) {
     `;
 
     const user = result[0];
+
+    // Link user_id in members table
+    if (memberId) {
+      await sql`UPDATE members SET user_id = ${user.id} WHERE id = ${memberId}`;
+    }
+
     const userPayload = {
       id: Number(user.id),
       username: user.username,
